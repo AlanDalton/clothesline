@@ -17,7 +17,6 @@
     :root{
       --max-width:75rem;
       --gap:1rem;
-      --side-width:22.5rem;
       --good-bg:#e6ffea;
       --bad-bg:#fff0f0;
       --fair-bg:#fff7e6;
@@ -28,7 +27,6 @@
       --base:1rem;
       --focus-color:#2ecc71;
       --primary:#2ecc71;
-      --secondary:#f3f3f3;
     }
 
     html{font-size:100%}
@@ -42,7 +40,6 @@
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* Page shell: single column (aside removed for clarity) */
     .page{
       width:100%;
       max-width:var(--max-width);
@@ -53,7 +50,7 @@
     }
 
     header.site-header{
-      margin-bottom:1.25rem;
+      margin-bottom:1rem;
     }
 
     h1{
@@ -68,47 +65,15 @@
       max-width:60ch;
     }
 
-    /* Weekly summary: visually separated and larger to show it's a summary of the page */
-    .weekly-summary{
-      margin-top:1.25rem;
-      padding:0.9rem 1rem;
-      background:#ffffff;
-      border-radius:0.5rem;
-      box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);
-      border-left:0.375rem solid var(--primary);
-      font-size:1rem;
-      color:var(--muted);
-      max-width:70ch;
-    }
-    .location-label{
-      margin-top:0.6rem;
-      font-weight:600;
-      color:var(--text);
-      font-size:0.98rem;
-    }
-
-    /* Controls: simplified and clearer order */
+    /* Controls: Use my location first, then manual input group */
     .controls{
       display:flex;
       gap:0.75rem;
-      align-items:center;
+      align-items:flex-start;
       margin:1.25rem 0;
       flex-wrap:wrap;
     }
-    .controls label{font-size:0.95rem}
-    .controls .input-wrap{display:flex;gap:0.5rem;align-items:center;flex:1;min-width:0}
-    input[type="text"]{
-      height:2.5rem;
-      padding:0.5rem 0.6rem;
-      border:0.0625rem solid #ccc;
-      border-radius:var(--radius);
-      font-size:1rem;
-      min-width:0;
-      width:100%;
-      box-sizing:border-box;
-      background: #fff;
-    }
-    /* Primary button (Use my location) more prominent and first */
+    .controls .col{min-width:0}
     .btn {
       height:2.5rem;
       padding:0 0.75rem;
@@ -129,15 +94,47 @@
       border:0.0625rem solid #ddd;
       color:var(--text);
     }
+    .input-wrap{display:flex;gap:0.5rem;align-items:center;flex:1;min-width:0}
+    label{font-size:0.95rem;display:block;margin-bottom:0.25rem}
+    input[type="text"]{
+      height:2.5rem;
+      padding:0.5rem 0.6rem;
+      border:0.0625rem solid #ccc;
+      border-radius:var(--radius);
+      font-size:1rem;
+      min-width:0;
+      width:100%;
+      box-sizing:border-box;
+      background:#fff;
+    }
+    .muted-note{font-size:0.9rem;color:var(--muted);margin-top:0.35rem}
 
-    /* Focus styles */
     :focus{outline:none}
     input[type="text"]:focus, .btn:focus {
       box-shadow:0 0 0 0.25rem rgba(46,204,113,0.12);
       border-color:var(--focus-color);
     }
 
-    /* Day cards */
+    /* Weekly summary moved below controls and visually separated */
+    .weekly-summary{
+      margin-top:1rem;
+      padding:0.9rem 1rem;
+      background:#ffffff;
+      border-radius:0.5rem;
+      box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);
+      border-left:0.375rem solid var(--primary);
+      font-size:1rem;
+      color:var(--muted);
+      max-width:70ch;
+    }
+    .location-label{
+      margin-top:0.6rem;
+      font-weight:600;
+      color:var(--text);
+      font-size:0.98rem;
+    }
+
+    /* Day cards: more space between them */
     .day-list{margin-top:1rem}
     h2.verdict{
       font-size:1.0625rem;
@@ -146,7 +143,7 @@
     .card{
       padding:var(--card-pad);
       border-radius:0.5rem;
-      margin:1rem 0; /* increased spacing between days */
+      margin:1.25rem 0; /* increased spacing between days */
       box-sizing:border-box;
     }
     .card.good{background:var(--good-bg); border-left:0.375rem solid #2ecc71}
@@ -155,7 +152,7 @@
     .card ul{margin:0.35rem 0 0 1.2rem;padding:0;color:var(--muted);font-size:0.95rem}
     .card li{margin:0.35rem 0; list-style:disc inside}
 
-    /* Details and hourly rows: summary is secondary (not bold) */
+    /* Details: summary is secondary (not bold) */
     details{margin-top:0.5rem}
     summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
     .meta{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
@@ -164,10 +161,8 @@
     .hour-left{font-weight:600}
     .hour-right{color:var(--muted);font-size:0.9rem}
 
-    /* Suggestions under input */
     #suggestions{margin-top:0.5rem;color:var(--muted);font-size:0.95rem}
 
-    /* No-JS message */
     .no-js{
       background:#fffbe6;
       border-left:0.375rem solid #f39c12;
@@ -179,11 +174,10 @@
     }
     .no-js a{color:#6a4b00; text-decoration:underline}
 
-    /* Responsive */
     @media (max-width:48rem){
       .controls{flex-direction:column;align-items:stretch}
       .btn{width:100%}
-      .btn-primary{order:-1} /* keep primary first on small screens */
+      .btn-primary{order:-1}
     }
     @media (prefers-reduced-motion: reduce){
       *{transition:none!important}
@@ -195,29 +189,36 @@
     <header class="site-header" role="banner">
       <h1>Should you hang out your washing today?</h1>
       <p class="lead">Quick, plain advice on whether today’s weather will dry your clothes outside.</p>
-
-      <!-- Weekly summary separated visually and given prominence so users recognise it as a summary -->
-      <div id="weeklySummary" class="weekly-summary" aria-live="polite">
-        <strong>Best times this week:</strong> <span id="weeklySummaryText">No location selected yet.</span>
-        <div id="locationLabel" class="location-label" aria-live="polite">Showing weather for: <span id="locationName">—</span></div>
-      </div>
     </header>
 
     <main role="main" aria-live="polite">
+      <!-- Controls: Use my location is visually and structurally first -->
       <div class="controls" aria-label="Location controls">
-        <div class="input-wrap" style="flex:1">
-          <label for="place">Where are you?</label>
-          <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Where are you?">
+        <div class="col" style="flex-basis:18rem;flex-shrink:0">
+          <button id="useLoc" class="btn btn-primary" type="button" aria-describedby="useLocNote">Use my location</button>
+          <div id="useLocNote" class="muted-note">Allow the browser to detect your location. This is the quickest option.</div>
         </div>
 
-        <!-- Use my location is primary and first; Check is a fallback -->
-        <div style="display:flex;gap:0.5rem;align-items:center">
-          <button id="useLoc" class="btn btn-primary" type="button">Use my location</button>
-          <button id="check" class="btn btn-ghost" type="button">Check</button>
+        <div class="col" style="flex:1;min-width:0">
+          <div style="display:flex;gap:0.5rem;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <label for="place">Where are you?</label>
+              <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Where are you?">
+              <div id="suggestions" aria-hidden="false"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:stretch">
+              <button id="check" class="btn btn-ghost" type="button" disabled aria-disabled="true">Check</button>
+              <div class="muted-note" style="text-align:center">Or type a place and press Check</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="suggestions" aria-hidden="false"></div>
+      <!-- Weekly summary moved below controls so it only shows after a location is chosen -->
+      <div id="weeklySummary" class="weekly-summary" aria-live="polite" hidden>
+        <strong>Best times this week:</strong> <span id="weeklySummaryText">No location selected yet.</span>
+        <div id="locationLabel" class="location-label" aria-live="polite">Showing weather for: <span id="locationName">—</span></div>
+      </div>
 
       <noscript>
         <div class="no-js" role="status">
@@ -447,12 +448,12 @@
         card.appendChild(ul);
         container.appendChild(card);
 
-        // Hourly details (kept as an optional, secondary feature)
+        // Hourly details (secondary, summary not bold)
         const details = document.createElement('details');
         details.open = false;
 
         const summary = document.createElement('summary');
-        summary.textContent = `Show hourly details for ${dayName}`; // summary is intentionally not bold
+        summary.textContent = `Show hourly details for ${dayName}`;
         details.appendChild(summary);
 
         const list = document.createElement('div');
@@ -497,17 +498,32 @@
       const weeklySummaryText = generateWeeklySummary(times, goodFlags);
       document.getElementById('weeklySummaryText').textContent = weeklySummaryText;
 
-      // show location clearly
+      // show location clearly and reveal weekly summary
       document.getElementById('locationName').textContent = locationLabel || 'Unknown location';
+      document.getElementById('weeklySummary').hidden = false;
 
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
 
-    // UI wiring
+    // UI wiring and behaviour for mutual exclusivity and button state
     const placeInput = document.getElementById('place');
     const suggestionsEl = document.getElementById('suggestions');
+    const checkBtn = document.getElementById('check');
+    const useLocBtn = document.getElementById('useLoc');
 
     function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    // Enable Check only when user types something non-empty
+    placeInput.addEventListener('input', () => {
+      const hasText = placeInput.value.trim().length > 0;
+      checkBtn.disabled = !hasText;
+      checkBtn.setAttribute('aria-disabled', String(!hasText));
+      // If user types, we consider manual input the chosen path; visually de-emphasise useLoc note
+      if (hasText) {
+        useLocBtn.setAttribute('aria-pressed', 'false');
+      }
+      doSuggest();
+    });
 
     const doSuggest = debounce(async () => {
       const q = placeInput.value.trim();
@@ -525,8 +541,11 @@
           div.style.cursor = 'pointer';
           div.textContent = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
           div.onclick = () => {
+            // When user selects a suggestion, treat that as the chosen location and disable Check
             placeInput.value = div.textContent;
             suggestionsEl.innerHTML = '';
+            checkBtn.disabled = true;
+            checkBtn.setAttribute('aria-disabled', 'true');
             fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, div.textContent)).catch(e => alert(e.message));
           };
           suggestionsEl.appendChild(div);
@@ -536,13 +555,19 @@
       }
     }, 300);
 
-    placeInput.addEventListener('input', doSuggest);
-
-    document.getElementById('useLoc').onclick = () => {
+    // Use my location: primary path. When used, clear manual input to avoid confusion.
+    useLocBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
         return;
       }
+      // Indicate primary option chosen
+      useLocBtn.setAttribute('aria-pressed', 'true');
+      placeInput.value = '';
+      suggestionsEl.innerHTML = '';
+      checkBtn.disabled = true;
+      checkBtn.setAttribute('aria-disabled', 'true');
+
       navigator.geolocation.getCurrentPosition(p => {
         const lat = p.coords.latitude.toFixed(4);
         const lon = p.coords.longitude.toFixed(4);
@@ -550,36 +575,50 @@
       }, err => {
         alert('Location denied or unavailable');
       });
-    };
+    });
 
-    document.getElementById('check').onclick = () => {
+    // Check button: only active when user has typed; after successful fetch it becomes disabled again
+    checkBtn.addEventListener('click', () => {
       const q = placeInput.value.trim();
       if (!q) {
         alert('Please enter a place, postcode, or coordinates, or click "Use my location".');
         return;
       }
+      // If coordinates were pasted, accept them directly
       const coordMatch = q.match(/^(-?\d+(\.\d+)?)[, ]+\s*(-?\d+(\.\d+)?)$/);
       if (coordMatch) {
-        fetchForecast(coordMatch[1], coordMatch[3]).then(data => evaluateForecastAndRender(data, q)).catch(e => alert(e.message));
+        fetchForecast(coordMatch[1], coordMatch[3]).then(data => {
+          evaluateForecastAndRender(data, q);
+          checkBtn.disabled = true;
+          checkBtn.setAttribute('aria-disabled', 'true');
+        }).catch(e => alert(e.message));
         return;
       }
       geocode(q).then(geo => {
         if (geo.results && geo.results.length > 0) {
           const r = geo.results[0];
           const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
-          fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, label)).catch(e => alert(e.message));
+          fetchForecast(r.latitude, r.longitude).then(data => {
+            evaluateForecastAndRender(data, label);
+            // After successful update, disable Check to show it's not needed until user types again
+            checkBtn.disabled = true;
+            checkBtn.setAttribute('aria-disabled', 'true');
+          }).catch(e => alert(e.message));
         } else {
           alert('Place not found. Try a nearby town or postcode.');
         }
       }).catch(() => alert('Geocoding failed'));
-    };
+    });
 
-    // No automatic default location on load — user must choose or allow location
+    // On load: no default location, weekly summary hidden, Check disabled
     window.addEventListener('load', () => {
-      // Clear any pre-filled value to avoid confusion
       placeInput.value = '';
-      document.getElementById('weeklySummaryText').textContent = 'No location selected yet.';
+      suggestionsEl.innerHTML = '';
+      checkBtn.disabled = true;
+      checkBtn.setAttribute('aria-disabled', 'true');
+      document.getElementById('weeklySummary').hidden = true;
       document.getElementById('locationName').textContent = '—';
+      useLocBtn.setAttribute('aria-pressed', 'false');
     });
   </script>
 </body>
