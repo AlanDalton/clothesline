@@ -5,27 +5,30 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Should you hang out your washing today? — Clothesline Weather Advisor</title>
   <meta name="description" content="Quick, plain advice on whether today's weather will dry your clothes outside. Uses rain, showers, snowfall, wind and relative humidity.">
-  <meta property="og:title" name="twitter:title" content="Should you hang out your washing today?">
-  <meta property="og:description" name="twitter:description" content="Quick, plain advice on whether today's weather will dry your clothes outside.">
-  <meta property="og:image" name="twitter:image" content="/assets/preview.png">
+  <meta property="og:title" content="Should you hang out your washing today?">
+  <meta name="twitter:title" content="Should you hang out your washing today?">
+  <meta property="og:description" content="Quick, plain advice on whether today's weather will dry your clothes outside.">
+  <meta name="twitter:description" content="Quick, plain advice on whether today's weather will dry your clothes outside.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="canonical" href="https://your-username.github.io/clothesline">
+  <link rel="canonical" href="https://alandalton.github.io/clothesline/">
 
   <style>
     :root{
-      --max-width:75rem; /* ~1200px */
+      --max-width:75rem;
       --gap:1rem;
-      --side-width:22.5rem; /* ~360px */
+      --side-width:22.5rem;
       --good-bg:#e6ffea;
       --bad-bg:#fff0f0;
       --fair-bg:#fff7e6;
       --text:#111;
       --muted:#555;
-      --radius:0.375rem; /* 6px */
+      --radius:0.375rem;
       --card-pad:0.6rem;
-      --base:1rem; /* 16px */
+      --base:1rem;
       --focus-color:#2ecc71;
+      --primary:#2ecc71;
+      --secondary:#f3f3f3;
     }
 
     html{font-size:100%}
@@ -39,60 +42,74 @@
       -moz-osx-font-smoothing:grayscale;
     }
 
-    /* Page shell */
+    /* Page shell: single column (aside removed for clarity) */
     .page{
       width:100%;
       max-width:var(--max-width);
       margin:0 auto;
       padding:1rem;
       box-sizing:border-box;
-      display:grid;
-      grid-template-columns: 1fr var(--side-width);
-      gap:var(--gap);
-      align-items:start;
+      display:block;
     }
 
     header.site-header{
-      grid-column:1 / -1;
-      margin-bottom:0.5rem;
+      margin-bottom:1.25rem;
     }
 
     h1{
-      font-size:clamp(1.5rem, 2.2vw, 2rem); /* 24-32px */
+      font-size:clamp(1.5rem, 2.2vw, 2rem);
       margin:0;
       line-height:1.05;
     }
     .lead{
-      margin:0.35rem 0 0 0;
+      margin:0.6rem 0 0 0;
       color:var(--muted);
-      font-size:0.9375rem; /* 15px */
-    }
-    .best-window{
-      margin:0.5rem 0 0 0;
-      font-size:0.95rem;
-      color:var(--muted);
+      font-size:0.98rem;
+      max-width:60ch;
     }
 
-    /* Controls */
+    /* Weekly summary: visually separated and larger to show it's a summary of the page */
+    .weekly-summary{
+      margin-top:1.25rem;
+      padding:0.9rem 1rem;
+      background:#ffffff;
+      border-radius:0.5rem;
+      box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);
+      border-left:0.375rem solid var(--primary);
+      font-size:1rem;
+      color:var(--muted);
+      max-width:70ch;
+    }
+    .location-label{
+      margin-top:0.6rem;
+      font-weight:600;
+      color:var(--text);
+      font-size:0.98rem;
+    }
+
+    /* Controls: simplified and clearer order */
     .controls{
       display:flex;
-      gap:0.5rem;
+      gap:0.75rem;
       align-items:center;
-      margin:0.75rem 0;
+      margin:1.25rem 0;
       flex-wrap:wrap;
     }
-    .controls label{font-size:0.875rem}
-    .controls .input-wrap{display:flex;gap:0.5rem;align-items:center}
+    .controls label{font-size:0.95rem}
+    .controls .input-wrap{display:flex;gap:0.5rem;align-items:center;flex:1;min-width:0}
     input[type="text"]{
-      height:2.5rem; /* 2.5rem = 40px */
+      height:2.5rem;
       padding:0.5rem 0.6rem;
       border:0.0625rem solid #ccc;
       border-radius:var(--radius);
       font-size:1rem;
-      min-width:18rem;
+      min-width:0;
+      width:100%;
       box-sizing:border-box;
+      background: #fff;
     }
-    button{
+    /* Primary button (Use my location) more prominent and first */
+    .btn {
       height:2.5rem;
       padding:0 0.75rem;
       border-radius:var(--radius);
@@ -101,49 +118,54 @@
       cursor:pointer;
       font-size:0.95rem;
     }
+    .btn-primary {
+      background:var(--primary);
+      color:#fff;
+      border-color:var(--primary);
+      box-shadow:0 1px 0 rgba(0,0,0,0.03);
+    }
+    .btn-ghost {
+      background:transparent;
+      border:0.0625rem solid #ddd;
+      color:var(--text);
+    }
+
     /* Focus styles */
     :focus{outline:none}
-    input[type="text"]:focus, button:focus {
-      box-shadow:0 0 0 0.25rem rgba(46,204,113,0.15);
+    input[type="text"]:focus, .btn:focus {
+      box-shadow:0 0 0 0.25rem rgba(46,204,113,0.12);
       border-color:var(--focus-color);
     }
 
-    /* Main and sidebar */
-    main.main-col{min-width:0}
-    aside.side-col{
-      background:#fff;
-      border-radius:var(--radius);
-      padding:0.75rem;
-      box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.06);
-      align-self:start;
-    }
-    .side-col h2{font-size:1rem;margin:0 0 0.5rem 0}
-
     /* Day cards */
+    .day-list{margin-top:1rem}
     h2.verdict{
-      font-size:1.0625rem; /* 17px */
+      font-size:1.0625rem;
       margin:0.75rem 0 0.25rem 0;
     }
     .card{
       padding:var(--card-pad);
       border-radius:0.5rem;
-      margin:0.5rem 0;
+      margin:1rem 0; /* increased spacing between days */
       box-sizing:border-box;
     }
     .card.good{background:var(--good-bg); border-left:0.375rem solid #2ecc71}
     .card.bad{background:var(--bad-bg); border-left:0.375rem solid #e74c3c}
     .card.fair{background:var(--fair-bg); border-left:0.375rem solid #f39c12}
-    .card ul{margin:0.35rem 0 0 1.2rem;padding:0;color:var(--muted);font-size:0.9375rem}
-    .card li{margin:0.25rem 0; list-style:disc inside}
+    .card ul{margin:0.35rem 0 0 1.2rem;padding:0;color:var(--muted);font-size:0.95rem}
+    .card li{margin:0.35rem 0; list-style:disc inside}
 
-    /* Details and hourly rows */
+    /* Details and hourly rows: summary is secondary (not bold) */
     details{margin-top:0.5rem}
-    summary{cursor:pointer;font-weight:600;font-size:0.95rem}
+    summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
     .meta{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
     .hour-row{display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;border-bottom:0.0625rem solid rgba(0,0,0,0.03)}
     .hour-row:last-child{border-bottom:0}
     .hour-left{font-weight:600}
     .hour-right{color:var(--muted);font-size:0.9rem}
+
+    /* Suggestions under input */
+    #suggestions{margin-top:0.5rem;color:var(--muted);font-size:0.95rem}
 
     /* No-JS message */
     .no-js{
@@ -157,24 +179,12 @@
     }
     .no-js a{color:#6a4b00; text-decoration:underline}
 
-    /* Responsive breakpoints */
-    @media (max-width:64rem){ /* ~1024px */
-      :root{--side-width:20rem}
-      .page{grid-template-columns:1fr var(--side-width)}
-    }
-
-    @media (max-width:48rem){ /* ~768px and below: stack */
-      .page{
-        grid-template-columns:1fr;
-        padding:0.75rem;
-      }
-      aside.side-col{order:2;margin-top:0.75rem}
-      main.main-col{order:1}
-      input[type="text"]{min-width:12rem;width:100%}
+    /* Responsive */
+    @media (max-width:48rem){
       .controls{flex-direction:column;align-items:stretch}
-      button{width:100%}
+      .btn{width:100%}
+      .btn-primary{order:-1} /* keep primary first on small screens */
     }
-
     @media (prefers-reduced-motion: reduce){
       *{transition:none!important}
     }
@@ -185,20 +195,29 @@
     <header class="site-header" role="banner">
       <h1>Should you hang out your washing today?</h1>
       <p class="lead">Quick, plain advice on whether today’s weather will dry your clothes outside.</p>
-      <p id="weeklySummary" class="best-window" aria-live="polite"></p>
+
+      <!-- Weekly summary separated visually and given prominence so users recognise it as a summary -->
+      <div id="weeklySummary" class="weekly-summary" aria-live="polite">
+        <strong>Best times this week:</strong> <span id="weeklySummaryText">No location selected yet.</span>
+        <div id="locationLabel" class="location-label" aria-live="polite">Showing weather for: <span id="locationName">—</span></div>
+      </div>
     </header>
 
-    <main class="main-col" role="main" aria-live="polite">
+    <main role="main" aria-live="polite">
       <div class="controls" aria-label="Location controls">
-        <div class="input-wrap">
-          <label for="place">Search place or postcode</label>
-          <input id="place" type="text" placeholder="e.g. Dublin, Ireland or D02" autocomplete="off" aria-label="Search place or postcode">
+        <div class="input-wrap" style="flex:1">
+          <label for="place">Where are you?</label>
+          <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Where are you?">
         </div>
+
+        <!-- Use my location is primary and first; Check is a fallback -->
         <div style="display:flex;gap:0.5rem;align-items:center">
-          <button id="useLoc" type="button">Use my location</button>
-          <button id="check" type="button">Check</button>
+          <button id="useLoc" class="btn btn-primary" type="button">Use my location</button>
+          <button id="check" class="btn btn-ghost" type="button">Check</button>
         </div>
       </div>
+
+      <div id="suggestions" aria-hidden="false"></div>
 
       <noscript>
         <div class="no-js" role="status">
@@ -207,15 +226,10 @@
         </div>
       </noscript>
 
-      <section id="periodSummaries" aria-label="Day summaries">
+      <section id="periodSummaries" class="day-list" aria-label="Day summaries">
         <!-- Day-by-day H2 headings and bullet lists will be injected here by JavaScript -->
       </section>
     </main>
-
-    <aside class="side-col" aria-label="Hourly timeline and details">
-      <h2>Hourly timeline (details)</h2>
-      <div id="results">Loading…</div>
-    </aside>
   </div>
 
   <script>
@@ -238,7 +252,7 @@
       return 'night';
     }
 
-    // Decision rule: sum rain + showers + snowfall for primary check
+    // Decision rule
     function isGoodHour(rainMm, showersMm, snowfallMm, windMs, rhPct) {
       const totalPrecip = (rainMm || 0) + (showersMm || 0) + (snowfallMm || 0);
       return totalPrecip < 0.2 && (windMs || 0) < 6 && (rhPct || 0) < 70;
@@ -258,7 +272,7 @@
       return r.json();
     }
 
-    // Helper: determine day verdict
+    // Day verdict helper
     function dayVerdictForDate(dateIso, times, goodFlags) {
       const start = dateIso + 'T06:00';
       const end = dateIso + 'T20:00';
@@ -269,9 +283,8 @@
       return { goodHours: count, verdict: count >= 4 ? 'Good' : 'Bad' };
     }
 
-    // Helper: find best contiguous good window within a day's indices
+    // Best window helper
     function findBestWindow(indices, times, goodFlags) {
-      // Find contiguous runs of good hours within the provided indices
       const runs = [];
       let runStart = null;
       for (let j = 0; j < indices.length; j++) {
@@ -288,7 +301,6 @@
       if (runStart !== null) runs.push({ start: runStart, end: indices[indices.length - 1] });
 
       if (runs.length === 0) return 'No good window';
-      // Choose the longest run
       runs.sort((a, b) => (b.end - b.start) - (a.end - a.start));
       const best = runs[0];
       const start = new Date(times[best.start]);
@@ -296,7 +308,7 @@
       return `${formatTime12(start)} – ${formatTime12(end)}`;
     }
 
-    // Find good periods across 7 days for weekly summary
+    // Weekly summary helper
     function findGoodPeriods7Days(times, goodFlags) {
       const windows = [];
       let i = 0;
@@ -308,7 +320,6 @@
         windows.push({ startIndex: start, endIndex: end });
         i = end + 1;
       }
-      // Merge windows separated by <= 2 hours
       const merged = [];
       for (const w of windows) {
         if (merged.length === 0) { merged.push(w); continue; }
@@ -343,7 +354,7 @@
       return `Best times this week: ${top[0]}, ${top[1]}, and ${top[2]}.`;
     }
 
-    // Render day summaries as bullet lists
+    // Render day summaries as bullet lists (with increased spacing)
     function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
       const container = document.getElementById('periodSummaries');
       container.innerHTML = '';
@@ -398,7 +409,7 @@
         const h2 = document.createElement('h2');
         h2.className = 'verdict';
         h2.textContent = `${labelPrefix} ${verdictText}`;
-        container.appendChild(h2);
+        card.appendChild(h2);
 
         // Bullet list
         const ul = document.createElement('ul');
@@ -436,12 +447,12 @@
         card.appendChild(ul);
         container.appendChild(card);
 
-        // Hourly details
+        // Hourly details (kept as an optional, secondary feature)
         const details = document.createElement('details');
         details.open = false;
 
         const summary = document.createElement('summary');
-        summary.textContent = `Show hourly details for ${dayName}`;
+        summary.textContent = `Show hourly details for ${dayName}`; // summary is intentionally not bold
         details.appendChild(summary);
 
         const list = document.createElement('div');
@@ -467,55 +478,12 @@
         });
 
         details.appendChild(list);
-        container.appendChild(details);
-      });
-    }
-
-    function renderHourlyTimelineByDay(times, rain, showers, snowfall, wind, rh, goodFlags) {
-      const results = document.getElementById('results');
-      results.innerHTML = '';
-      const maxHours = Math.min(times.length, 7 * 24);
-      const days = {};
-      for (let i = 0; i < maxHours; i++) {
-        const d = new Date(times[i]);
-        const dayKey = d.toISOString().slice(0,10);
-        if (!days[dayKey]) days[dayKey] = [];
-        days[dayKey].push(i);
-      }
-
-      Object.keys(days).forEach(dayKey => {
-        const indices = days[dayKey];
-        const first = indices[0];
-        const dayName = formatDay(new Date(times[first]));
-        const details = document.createElement('details');
-        details.open = false;
-        const summary = document.createElement('summary');
-        summary.textContent = `${dayName} hourly details`;
-        details.appendChild(summary);
-
-        const list = document.createElement('div');
-        list.className = 'meta';
-        indices.forEach(i => {
-          const d = new Date(times[i]);
-          const timeLabel = `${formatTime12(d)}`;
-          const totalPrecip = ((rain && rain[i]) || 0) + ((showers && showers[i]) || 0) + ((snowfall && snowfall[i]) || 0);
-          const precipLabel = `☔️ ${totalPrecip.toFixed(1)} mm`;
-          const windLabel = `💨 ${wind[i]} m/s`;
-          const rhLabel = `relative humidity ${rh[i]}%`;
-          const status = goodFlags[i] ? 'Good' : 'Poor';
-          const row = document.createElement('div');
-          row.className = 'hour-row';
-          row.innerHTML = `<div class="hour-left"><strong>${timeLabel}</strong></div><div class="hour-right">${precipLabel} · ${windLabel} · ${rhLabel} · ${status}</div>`;
-          list.appendChild(row);
-        });
-
-        details.appendChild(list);
-        results.appendChild(details);
+        card.appendChild(details);
       });
     }
 
     // Main evaluation
-    function evaluateForecastAndRender(data, label) {
+    function evaluateForecastAndRender(data, locationLabel) {
       const times = data.hourly.time;
       const rain = data.hourly.rain || [];
       const showers = data.hourly.showers || [];
@@ -526,19 +494,18 @@
       const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
 
       // weekly summary (one sentence)
-      const weeklySummaryEl = document.getElementById('weeklySummary');
-      weeklySummaryEl.textContent = generateWeeklySummary(times, goodFlags);
+      const weeklySummaryText = generateWeeklySummary(times, goodFlags);
+      document.getElementById('weeklySummaryText').textContent = weeklySummaryText;
+
+      // show location clearly
+      document.getElementById('locationName').textContent = locationLabel || 'Unknown location';
 
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
-      renderHourlyTimelineByDay(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
 
     // UI wiring
     const placeInput = document.getElementById('place');
-    const suggestionsEl = document.createElement('div');
-    suggestionsEl.id = 'suggestions';
-    suggestionsEl.style.marginTop = '0.5rem';
-    document.querySelector('.controls').appendChild(suggestionsEl);
+    const suggestionsEl = document.getElementById('suggestions');
 
     function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 
@@ -588,8 +555,7 @@
     document.getElementById('check').onclick = () => {
       const q = placeInput.value.trim();
       if (!q) {
-        // Default to Dublin coordinates
-        fetchForecast(53.3498, -6.2603).then(data => evaluateForecastAndRender(data, 'Dublin, Ireland')).catch(e => alert(e.message));
+        alert('Please enter a place, postcode, or coordinates, or click "Use my location".');
         return;
       }
       const coordMatch = q.match(/^(-?\d+(\.\d+)?)[, ]+\s*(-?\d+(\.\d+)?)$/);
@@ -600,17 +566,20 @@
       geocode(q).then(geo => {
         if (geo.results && geo.results.length > 0) {
           const r = geo.results[0];
-          fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : ''))).catch(e => alert(e.message));
+          const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
+          fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, label)).catch(e => alert(e.message));
         } else {
           alert('Place not found. Try a nearby town or postcode.');
         }
       }).catch(() => alert('Geocoding failed'));
     };
 
-    // Auto-run default on load (Dublin)
+    // No automatic default location on load — user must choose or allow location
     window.addEventListener('load', () => {
-      placeInput.value = 'Dublin, Ireland';
-      document.getElementById('check').click();
+      // Clear any pre-filled value to avoid confusion
+      placeInput.value = '';
+      document.getElementById('weeklySummaryText').textContent = 'No location selected yet.';
+      document.getElementById('locationName').textContent = '—';
     });
   </script>
 </body>
