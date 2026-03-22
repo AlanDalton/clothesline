@@ -31,7 +31,7 @@
 
     html{font-size:100%}
     body{
-      font-family: Seravek, 'Gill Sans Nova', Ubuntu, Cadara, 'DejaVu Sans', source-sans-pro, sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color:var(--text);
       margin:0;
       background:#fafafa;
@@ -49,108 +49,37 @@
       display:block;
     }
 
-    header.site-header{
-      margin-bottom:1rem;
-    }
+    header.site-header{margin-bottom:1rem}
+    h1{font-size:clamp(1.5rem,2.2vw,2rem);margin:0;line-height:1.05}
+    .lead{margin:0.6rem 0 0 0;color:var(--muted);font-size:0.98rem;max-width:60ch}
 
-    h1{
-      font-size:clamp(1.5rem, 2.2vw, 2rem);
-      margin:0;
-      line-height:1.05;
-    }
-    .lead{
-      margin:0.6rem 0 0 0;
-      color:var(--muted);
-      font-size:0.98rem;
-      max-width:60ch;
-    }
-
-    /* Controls: Use my location first, then manual input group */
-    .controls{
-      display:flex;
-      gap:0.75rem;
-      align-items:flex-start;
-      margin:1.25rem 0;
-      flex-wrap:wrap;
-    }
+    .controls{display:flex;gap:0.75rem;align-items:flex-start;margin:1.25rem 0;flex-wrap:wrap}
     .controls .col{min-width:0}
-    .btn {
-      height:2.5rem;
-      padding:0 0.75rem;
-      border-radius:var(--radius);
-      border:0.0625rem solid #bbb;
-      background:#fff;
-      cursor:pointer;
-      font-size:0.95rem;
-    }
-    .btn-primary {
-      background:var(--primary);
-      color:#fff;
-      border-color:var(--primary);
-      box-shadow:0 1px 0 rgba(0,0,0,0.03);
-    }
+    .btn{height:2.5rem;padding:0 0.75rem;border-radius:var(--radius);border:0.0625rem solid #bbb;background:#fff;cursor:pointer;font-size:0.95rem}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 1px 0 rgba(0,0,0,0.03)}
     .input-wrap{display:flex;gap:0.5rem;align-items:center;flex:1;min-width:0}
     label{font-size:0.95rem;display:block;margin-bottom:0.25rem}
-    input[type="text"]{
-      height:2.5rem;
-      padding:0.5rem 0.6rem;
-      border:0.0625rem solid #ccc;
-      border-radius:var(--radius);
-      font-size:1rem;
-      min-width:0;
-      width:100%;
-      box-sizing:border-box;
-      background:#fff;
-    }
+    input[type="text"]{height:2.5rem;padding:0.5rem 0.6rem;border:0.0625rem solid #ccc;border-radius:var(--radius);font-size:1rem;min-width:0;width:100%;box-sizing:border-box;background:#fff}
     .muted-note{font-size:0.9rem;color:var(--muted);margin-top:0.35rem}
 
     :focus{outline:none}
-    input[type="text"]:focus, .btn:focus {
-      box-shadow:0 0 0 0.25rem rgba(46,204,113,0.12);
-      border-color:var(--focus-color);
-    }
+    input[type="text"]:focus, .btn:focus {box-shadow:0 0 0 0.25rem rgba(46,204,113,0.12);border-color:var(--focus-color)}
 
-    /* Combined weekly summary + location: visually prominent and placed below controls */
-    .weekly-summary{
-      margin-top:1rem;
-      padding:0.9rem 1rem;
-      background:#ffffff;
-      border-radius:0.5rem;
-      box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);
-      border-left:0.375rem solid var(--primary);
-      font-size:1rem;
-      color:var(--muted);
-      max-width:70ch;
-    }
-    .weekly-summary h3{
-      margin:0 0 0.5rem 0;
-      font-size:1rem;
-      color:var(--text);
-      font-weight:600;
-    }
+    .weekly-summary{margin-top:1rem;padding:0.9rem 1rem;background:#fff;border-radius:0.5rem;box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);border-left:0.375rem solid var(--primary);font-size:1rem;color:var(--muted);max-width:70ch}
+    .weekly-summary h3{margin:0 0 0.5rem 0;font-size:1rem;color:var(--text);font-weight:600}
     .weekly-summary ul{margin:0;padding-left:1.2rem}
     .weekly-summary li{margin:0.35rem 0}
     .weekly-summary li strong{font-weight:700;color:var(--text)}
 
-    /* Day cards: more space between them */
     .day-list{margin-top:1rem}
-    h2.verdict{
-      font-size:1.0625rem;
-      margin:0.75rem 0 0.25rem 0;
-    }
-    .card{
-      padding:var(--card-pad);
-      border-radius:0.5rem;
-      margin:1.25rem 0; /* increased spacing between days */
-      box-sizing:border-box;
-    }
-    .card.good{background:var(--good-bg); border-left:0.375rem solid #2ecc71}
-    .card.bad{background:var(--bad-bg); border-left:0.375rem solid #e74c3c}
-    .card.fair{background:var(--fair-bg); border-left:0.375rem solid #f39c12}
+    h2.verdict{font-size:1.0625rem;margin:0.75rem 0 0.25rem 0}
+    .card{padding:var(--card-pad);border-radius:0.5rem;margin:1.25rem 0;box-sizing:border-box}
+    .card.good{background:var(--good-bg);border-left:0.375rem solid #2ecc71}
+    .card.bad{background:var(--bad-bg);border-left:0.375rem solid #e74c3c}
+    .card.fair{background:var(--fair-bg);border-left:0.375rem solid #f39c12}
     .card ul{margin:0.35rem 0 0 1.2rem;padding:0;color:var(--muted);font-size:0.95rem}
-    .card li{margin:0.35rem 0; list-style:disc inside}
+    .card li{margin:0.35rem 0;list-style:disc inside}
 
-    /* Details: summary is secondary (not bold) */
     details{margin-top:0.5rem}
     summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
     .meta{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
@@ -161,25 +90,11 @@
 
     #suggestions{margin-top:0.5rem;color:var(--muted);font-size:0.95rem}
 
-    .no-js{
-      background:#fffbe6;
-      border-left:0.375rem solid #f39c12;
-      padding:0.6rem;
-      border-radius:var(--radius);
-      margin:0.5rem 0;
-      color:#6a4b00;
-      font-size:0.95rem;
-    }
-    .no-js a{color:#6a4b00; text-decoration:underline}
+    .no-js{background:#fffbe6;border-left:0.375rem solid #f39c12;padding:0.6rem;border-radius:var(--radius);margin:0.5rem 0;color:#6a4b00;font-size:0.95rem}
+    .no-js a{color:#6a4b00;text-decoration:underline}
 
-    @media (max-width:48rem){
-      .controls{flex-direction:column;align-items:stretch}
-      .btn{width:100%}
-      .btn-primary{order:-1}
-    }
-    @media (prefers-reduced-motion: reduce){
-      *{transition:none!important}
-    }
+    @media (max-width:48rem){.controls{flex-direction:column;align-items:stretch}.btn{width:100%}.btn-primary{order:-1}}
+    @media (prefers-reduced-motion: reduce){*{transition:none!important}}
   </style>
 </head>
 <body>
@@ -190,10 +105,9 @@
     </header>
 
     <main role="main" aria-live="polite">
-      <!-- Controls: Use my location is visually and structurally first -->
       <div class="controls" aria-label="Location controls">
         <div class="col" style="flex-basis:18rem;flex-shrink:0">
-          <button id="useLoc" class="btn btn-primary" type="button" aria-describedby="useLocNote">Use my location</button>
+          <button id="useLoc" class="btn btn-primary" type="button" aria-describedby="useLocNote" aria-pressed="false">Use my location</button>
           <div id="useLocNote" class="muted-note">Allow the browser to detect your location. This is the quickest option.</div>
         </div>
 
@@ -208,12 +122,9 @@
         </div>
       </div>
 
-      <!-- Combined weekly summary + location: hidden until a location is chosen -->
       <section id="weeklySummary" class="weekly-summary" aria-live="polite" hidden>
         <h3 id="weeklyHeading">Best times this week for hanging out clothes in <span id="locationName">—</span>:</h3>
-        <ul id="weeklyList" aria-live="polite">
-          <!-- Bullet points with bold text will be injected here -->
-        </ul>
+        <ul id="weeklyList" aria-live="polite"></ul>
       </section>
 
       <noscript>
@@ -223,9 +134,7 @@
         </div>
       </noscript>
 
-      <section id="periodSummaries" class="day-list" aria-label="Day summaries">
-        <!-- Day-by-day H2 headings and bullet lists will be injected here by JavaScript -->
-      </section>
+      <section id="periodSummaries" class="day-list" aria-label="Day summaries"></section>
     </main>
   </div>
 
@@ -272,18 +181,35 @@
     // Reverse geocode: lat,lon -> friendly place label
     async function reverseGeocode(lat, lon) {
       try {
-        const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&count=1&language=en&format=json`;
+        const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&count=3&language=en&format=json`;
         const r = await fetch(url);
         if (!r.ok) throw new Error('Reverse geocoding failed');
         const json = await r.json();
         if (json && json.results && json.results.length > 0) {
-          const r0 = json.results[0];
-          // Build a friendly label: prefer locality name, then admin1, then country
-          const parts = [];
-          if (r0.name) parts.push(r0.name);
-          if (r0.admin1 && r0.admin1 !== r0.name) parts.push(r0.admin1);
-          if (r0.country && !parts.includes(r0.country)) parts.push(r0.country);
-          return parts.join(', ');
+          // Prefer locality-like fields in this order: name, locality, admin2, admin1, country
+          // Build candidate parts from the top result first
+          const tryBuild = (res) => {
+            const parts = [];
+            if (res.name) parts.push(res.name);
+            if (res.locality && !parts.includes(res.locality)) parts.push(res.locality);
+            if (res.admin2 && !parts.includes(res.admin2)) parts.push(res.admin2);
+            if (res.admin1 && !parts.includes(res.admin1)) parts.push(res.admin1);
+            if (res.country && !parts.includes(res.country)) parts.push(res.country);
+            return parts;
+          };
+
+          // Try the first result
+          let parts = tryBuild(json.results[0]);
+          if (parts.length >= 2) return parts.slice(0, 2).join(', ');
+
+          // Otherwise scan other results for a better locality-like match
+          for (let i = 1; i < json.results.length; i++) {
+            parts = tryBuild(json.results[i]);
+            if (parts.length >= 2) return parts.slice(0, 2).join(', ');
+          }
+
+          // Fallback: return whatever readable combination we can
+          if (parts.length > 0) return parts.join(', ');
         }
       } catch (e) {
         // silent fallback handled by caller
@@ -373,7 +299,6 @@
       const periods = findGoodPeriods7Days(times, goodFlags);
       locationName.textContent = locationLabel || 'Unknown location';
 
-      // Build list items
       listEl.innerHTML = '';
       if (!periods || periods.length === 0) {
         const li = document.createElement('li');
@@ -387,11 +312,10 @@
         });
       }
 
-      // Reveal the combined summary
       weeklySection.hidden = false;
     }
 
-    // Render day summaries as bullet lists (with increased spacing)
+    // Render day summaries
     function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
       const container = document.getElementById('periodSummaries');
       container.innerHTML = '';
@@ -417,7 +341,6 @@
           dayKey === tomorrowIso ? 'Tomorrow is' :
           `${dayName} is`;
 
-        // Compute summary stats
         let totalPrecip = 0;
         let maxWind = 0;
         let sumRh = 0;
@@ -434,7 +357,6 @@
           ? 'good for hanging out clothes.'
           : 'bad for hanging out clothes.';
 
-        // Create card
         const card = document.createElement('div');
         card.className =
           'card ' +
@@ -442,31 +364,25 @@
             ? 'good'
             : (totalPrecip >= 0.2 ? 'bad' : (maxWind >= 6 ? 'fair' : 'bad')));
 
-        // Heading
         const h2 = document.createElement('h2');
         h2.className = 'verdict';
         h2.textContent = `${labelPrefix} ${verdictText}`;
         card.appendChild(h2);
 
-        // Bullet list
         const ul = document.createElement('ul');
 
-        // Precipitation
         const li1 = document.createElement('li');
         li1.textContent = `☔️ Total precipitation: ${totalPrecip.toFixed(1)} mm`;
         ul.appendChild(li1);
 
-        // Wind
         const li2 = document.createElement('li');
         li2.textContent = `💨 Wind: ${maxWind.toFixed(1)} m/s`;
         ul.appendChild(li2);
 
-        // Humidity
         const li3 = document.createElement('li');
         li3.textContent = `💧 Relative humidity: ${avgRh}%`;
         ul.appendChild(li3);
 
-        // Best window or reason
         const li4 = document.createElement('li');
         if (dayGoodInfo.verdict === 'Good') {
           li4.textContent = `👍 Best window: ${findBestWindow(indices, times, goodFlags)}`;
@@ -484,7 +400,6 @@
         card.appendChild(ul);
         container.appendChild(card);
 
-        // Hourly details (secondary, summary not bold)
         const details = document.createElement('details');
         details.open = false;
 
@@ -530,13 +445,11 @@
 
       const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
 
-      // Render combined weekly summary + location as a bold bullet list
       renderWeeklyList(locationLabel, times, goodFlags);
-
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
 
-    // UI wiring and behaviour for mutual exclusivity and suggestion selection
+    // UI wiring
     const placeInput = document.getElementById('place');
     const suggestionsEl = document.getElementById('suggestions');
     const useLocBtn = document.getElementById('useLoc');
@@ -557,12 +470,12 @@
           const div = document.createElement('div');
           div.style.padding = '0.4rem';
           div.style.cursor = 'pointer';
-          div.textContent = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
+          const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
+          div.textContent = label;
           div.onclick = () => {
-            // When user selects a suggestion, treat that as the chosen location
-            placeInput.value = div.textContent;
+            placeInput.value = label;
             suggestionsEl.innerHTML = '';
-            fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, div.textContent)).catch(e => alert(e.message));
+            fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, label)).catch(e => alert(e.message));
           };
           suggestionsEl.appendChild(div);
         });
@@ -571,7 +484,6 @@
       }
     }, 300);
 
-    // When user types, de-emphasise the "Use my location" primary state
     placeInput.addEventListener('input', () => {
       const hasText = placeInput.value.trim().length > 0;
       if (hasText) {
@@ -580,42 +492,48 @@
       doSuggest();
     });
 
-    // Use my location: primary path. When used, clear manual input to avoid confusion.
-    // This handler now reverse-geocodes coordinates to a friendly place name before rendering.
+    // Use my location: reverse-geocode to a friendly place name and render
     useLocBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
         return;
       }
-      // Indicate primary option chosen
+
       useLocBtn.setAttribute('aria-pressed', 'true');
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
 
       navigator.geolocation.getCurrentPosition(async p => {
-        const lat = p.coords.latitude.toFixed(4);
-        const lon = p.coords.longitude.toFixed(4);
+        const lat = p.coords.latitude;
+        const lon = p.coords.longitude;
 
         try {
-          // Fetch forecast and reverse-geocode in parallel for speed
+          // Run forecast and reverse geocode in parallel
           const [data, placeLabel] = await Promise.all([
             fetchForecast(lat, lon),
             reverseGeocode(lat, lon)
           ]);
 
-          // If reverse geocode returned a label, use it; otherwise fall back to a readable fallback
-          // Prefer a human-friendly place name when available
-          const label = placeLabel || `Detected location (${lat}, ${lon})`;
+          // If reverse geocode returned a friendly label, use it.
+          // Otherwise, attempt a second pass to extract a readable label; if still unavailable, use a concise lat/lon fallback.
+          let label = placeLabel;
+          if (!label) {
+            // Try a second reverse attempt with the same helper (it already scans multiple results)
+            const fallback = await reverseGeocode(lat, lon);
+            if (fallback) label = fallback;
+            else label = `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+          }
+
           evaluateForecastAndRender(data, label);
         } catch (err) {
           alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
         }
       }, err => {
         alert('Location denied or unavailable');
-      });
+      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 });
     });
 
-    // On load: no default location, weekly summary hidden
+    // On load: hide weekly summary until a location is chosen
     window.addEventListener('load', () => {
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
