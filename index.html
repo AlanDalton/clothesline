@@ -269,6 +269,24 @@
       return r.json();
     }
 
+    // Reverse geocode: lat,lon -> friendly place label
+    async function reverseGeocode(lat, lon) {
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&count=1&language=en&format=json`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Reverse geocoding failed');
+        const json = await r.json();
+        if (json && json.results && json.results.length > 0) {
+          const r0 = json.results[0];
+          const parts = [r0.name, r0.admin1, r0.country].filter(Boolean);
+          return parts.join(', ');
+        }
+      } catch (e) {
+        // silent fallback handled by caller
+      }
+      return null;
+    }
+
     // Day verdict helper
     function dayVerdictForDate(dateIso, times, goodFlags) {
       const start = dateIso + 'T06:00';
@@ -559,6 +577,7 @@
     });
 
     // Use my location: primary path. When used, clear manual input to avoid confusion.
+    // This handler now reverse-geocodes coordinates to a friendly place name before rendering.
     useLocBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
@@ -569,10 +588,23 @@
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
 
-      navigator.geolocation.getCurrentPosition(p => {
+      navigator.geolocation.getCurrentPosition(async p => {
         const lat = p.coords.latitude.toFixed(4);
         const lon = p.coords.longitude.toFixed(4);
-        fetchForecast(lat, lon).then(data => evaluateForecastAndRender(data, 'Your location')).catch(e => alert(e.message));
+
+        try {
+          // Fetch forecast and reverse-geocode in parallel for speed
+          const [data, placeLabel] = await Promise.all([
+            fetchForecast(lat, lon),
+            reverseGeocode(lat, lon)
+          ]);
+
+          // If reverse geocode returned a label, use it; otherwise fall back to a readable fallback
+          const label = placeLabel || `Lat ${lat}, Lon ${lon}`;
+          evaluateForecastAndRender(data, label);
+        } catch (err) {
+          alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
+        }
       }, err => {
         alert('Location denied or unavailable');
       });
