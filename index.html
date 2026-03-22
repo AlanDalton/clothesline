@@ -278,7 +278,11 @@
         const json = await r.json();
         if (json && json.results && json.results.length > 0) {
           const r0 = json.results[0];
-          const parts = [r0.name, r0.admin1, r0.country].filter(Boolean);
+          // Build a friendly label: prefer locality name, then admin1, then country
+          const parts = [];
+          if (r0.name) parts.push(r0.name);
+          if (r0.admin1 && r0.admin1 !== r0.name) parts.push(r0.admin1);
+          if (r0.country && !parts.includes(r0.country)) parts.push(r0.country);
           return parts.join(', ');
         }
       } catch (e) {
@@ -600,7 +604,8 @@
           ]);
 
           // If reverse geocode returned a label, use it; otherwise fall back to a readable fallback
-          const label = placeLabel || `Lat ${lat}, Lon ${lon}`;
+          // Prefer a human-friendly place name when available
+          const label = placeLabel || `Detected location (${lat}, ${lon})`;
           evaluateForecastAndRender(data, label);
         } catch (err) {
           alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
