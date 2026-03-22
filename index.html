@@ -89,11 +89,6 @@
       border-color:var(--primary);
       box-shadow:0 1px 0 rgba(0,0,0,0.03);
     }
-    .btn-ghost {
-      background:transparent;
-      border:0.0625rem solid #ddd;
-      color:var(--text);
-    }
     .input-wrap{display:flex;gap:0.5rem;align-items:center;flex:1;min-width:0}
     label{font-size:0.95rem;display:block;margin-bottom:0.25rem}
     input[type="text"]{
@@ -205,13 +200,9 @@
         <div class="col" style="flex:1;min-width:0">
           <div style="display:flex;gap:0.5rem;align-items:flex-start">
             <div style="flex:1;min-width:0">
-              <label for="place">Where are you?</label>
-              <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Where are you?">
+              <label for="place">Check another location:</label>
+              <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Check another location">
               <div id="suggestions" aria-hidden="false"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:stretch">
-              <button id="check" class="btn btn-ghost" type="button" disabled aria-disabled="true">Check</button>
-              <div class="muted-note" style="text-align:center">Or type a place and press Check</div>
             </div>
           </div>
         </div>
@@ -354,7 +345,6 @@
     // Render weekly list as bold bullet points
     function renderWeeklyList(locationLabel, times, goodFlags) {
       const weeklySection = document.getElementById('weeklySummary');
-      const heading = document.getElementById('weeklyHeading');
       const locationName = document.getElementById('locationName');
       const listEl = document.getElementById('weeklyList');
 
@@ -524,24 +514,12 @@
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
 
-    // UI wiring and behaviour for mutual exclusivity and button state
+    // UI wiring and behaviour for mutual exclusivity and suggestion selection
     const placeInput = document.getElementById('place');
     const suggestionsEl = document.getElementById('suggestions');
-    const checkBtn = document.getElementById('check');
     const useLocBtn = document.getElementById('useLoc');
 
     function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-    // Enable Check only when user types something non-empty
-    placeInput.addEventListener('input', () => {
-      const hasText = placeInput.value.trim().length > 0;
-      checkBtn.disabled = !hasText;
-      checkBtn.setAttribute('aria-disabled', String(!hasText));
-      if (hasText) {
-        useLocBtn.setAttribute('aria-pressed', 'false');
-      }
-      doSuggest();
-    });
 
     const doSuggest = debounce(async () => {
       const q = placeInput.value.trim();
@@ -559,10 +537,9 @@
           div.style.cursor = 'pointer';
           div.textContent = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
           div.onclick = () => {
+            // When user selects a suggestion, treat that as the chosen location
             placeInput.value = div.textContent;
             suggestionsEl.innerHTML = '';
-            checkBtn.disabled = true;
-            checkBtn.setAttribute('aria-disabled', 'true');
             fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, div.textContent)).catch(e => alert(e.message));
           };
           suggestionsEl.appendChild(div);
@@ -572,17 +549,25 @@
       }
     }, 300);
 
+    // When user types, de-emphasise the "Use my location" primary state
+    placeInput.addEventListener('input', () => {
+      const hasText = placeInput.value.trim().length > 0;
+      if (hasText) {
+        useLocBtn.setAttribute('aria-pressed', 'false');
+      }
+      doSuggest();
+    });
+
     // Use my location: primary path. When used, clear manual input to avoid confusion.
     useLocBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
         return;
       }
+      // Indicate primary option chosen
       useLocBtn.setAttribute('aria-pressed', 'true');
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
-      checkBtn.disabled = true;
-      checkBtn.setAttribute('aria-disabled', 'true');
 
       navigator.geolocation.getCurrentPosition(p => {
         const lat = p.coords.latitude.toFixed(4);
@@ -593,43 +578,10 @@
       });
     });
 
-    // Check button: only active when user has typed; after successful fetch it becomes disabled again
-    checkBtn.addEventListener('click', () => {
-      const q = placeInput.value.trim();
-      if (!q) {
-        alert('Please enter a place, postcode, or coordinates, or click "Use my location".');
-        return;
-      }
-      const coordMatch = q.match(/^(-?\d+(\.\d+)?)[, ]+\s*(-?\d+(\.\d+)?)$/);
-      if (coordMatch) {
-        fetchForecast(coordMatch[1], coordMatch[3]).then(data => {
-          evaluateForecastAndRender(data, q);
-          checkBtn.disabled = true;
-          checkBtn.setAttribute('aria-disabled', 'true');
-        }).catch(e => alert(e.message));
-        return;
-      }
-      geocode(q).then(geo => {
-        if (geo.results && geo.results.length > 0) {
-          const r = geo.results[0];
-          const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
-          fetchForecast(r.latitude, r.longitude).then(data => {
-            evaluateForecastAndRender(data, label);
-            checkBtn.disabled = true;
-            checkBtn.setAttribute('aria-disabled', 'true');
-          }).catch(e => alert(e.message));
-        } else {
-          alert('Place not found. Try a nearby town or postcode.');
-        }
-      }).catch(() => alert('Geocoding failed'));
-    });
-
-    // On load: no default location, weekly summary hidden, Check disabled
+    // On load: no default location, weekly summary hidden
     window.addEventListener('load', () => {
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
-      checkBtn.disabled = true;
-      checkBtn.setAttribute('aria-disabled', 'true');
       document.getElementById('weeklySummary').hidden = true;
       document.getElementById('locationName').textContent = '—';
       useLocBtn.setAttribute('aria-pressed', 'false');
