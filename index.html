@@ -115,7 +115,7 @@
       border-color:var(--focus-color);
     }
 
-    /* Weekly summary moved below controls and visually separated */
+    /* Combined weekly summary + location: visually prominent and placed below controls */
     .weekly-summary{
       margin-top:1rem;
       padding:0.9rem 1rem;
@@ -127,12 +127,15 @@
       color:var(--muted);
       max-width:70ch;
     }
-    .location-label{
-      margin-top:0.6rem;
-      font-weight:600;
+    .weekly-summary h3{
+      margin:0 0 0.5rem 0;
+      font-size:1rem;
       color:var(--text);
-      font-size:0.98rem;
+      font-weight:600;
     }
+    .weekly-summary ul{margin:0;padding-left:1.2rem}
+    .weekly-summary li{margin:0.35rem 0}
+    .weekly-summary li strong{font-weight:700;color:var(--text)}
 
     /* Day cards: more space between them */
     .day-list{margin-top:1rem}
@@ -214,11 +217,13 @@
         </div>
       </div>
 
-      <!-- Weekly summary moved below controls so it only shows after a location is chosen -->
-      <div id="weeklySummary" class="weekly-summary" aria-live="polite" hidden>
-        <strong>Best times this week:</strong> <span id="weeklySummaryText">No location selected yet.</span>
-        <div id="locationLabel" class="location-label" aria-live="polite">Showing weather for: <span id="locationName">—</span></div>
-      </div>
+      <!-- Combined weekly summary + location: hidden until a location is chosen -->
+      <section id="weeklySummary" class="weekly-summary" aria-live="polite" hidden>
+        <h3 id="weeklyHeading">Best times this week for hanging out clothes in <span id="locationName">—</span>:</h3>
+        <ul id="weeklyList" aria-live="polite">
+          <!-- Bullet points with bold text will be injected here -->
+        </ul>
+      </section>
 
       <noscript>
         <div class="no-js" role="status">
@@ -346,13 +351,32 @@
       });
     }
 
-    function generateWeeklySummary(times, goodFlags) {
+    // Render weekly list as bold bullet points
+    function renderWeeklyList(locationLabel, times, goodFlags) {
+      const weeklySection = document.getElementById('weeklySummary');
+      const heading = document.getElementById('weeklyHeading');
+      const locationName = document.getElementById('locationName');
+      const listEl = document.getElementById('weeklyList');
+
       const periods = findGoodPeriods7Days(times, goodFlags);
-      if (!periods || periods.length === 0) return 'No reliably dry windows are forecast this week.';
-      const top = periods.slice(0, 3);
-      if (top.length === 1) return `Best time this week: ${top[0]}.`;
-      if (top.length === 2) return `Best times this week: ${top[0]} and ${top[1]}.`;
-      return `Best times this week: ${top[0]}, ${top[1]}, and ${top[2]}.`;
+      locationName.textContent = locationLabel || 'Unknown location';
+
+      // Build list items
+      listEl.innerHTML = '';
+      if (!periods || periods.length === 0) {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>No reliably dry windows are forecast this week.</strong>';
+        listEl.appendChild(li);
+      } else {
+        periods.forEach(p => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${p}</strong>`;
+          listEl.appendChild(li);
+        });
+      }
+
+      // Reveal the combined summary
+      weeklySection.hidden = false;
     }
 
     // Render day summaries as bullet lists (with increased spacing)
@@ -494,13 +518,8 @@
 
       const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
 
-      // weekly summary (one sentence)
-      const weeklySummaryText = generateWeeklySummary(times, goodFlags);
-      document.getElementById('weeklySummaryText').textContent = weeklySummaryText;
-
-      // show location clearly and reveal weekly summary
-      document.getElementById('locationName').textContent = locationLabel || 'Unknown location';
-      document.getElementById('weeklySummary').hidden = false;
+      // Render combined weekly summary + location as a bold bullet list
+      renderWeeklyList(locationLabel, times, goodFlags);
 
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
@@ -518,7 +537,6 @@
       const hasText = placeInput.value.trim().length > 0;
       checkBtn.disabled = !hasText;
       checkBtn.setAttribute('aria-disabled', String(!hasText));
-      // If user types, we consider manual input the chosen path; visually de-emphasise useLoc note
       if (hasText) {
         useLocBtn.setAttribute('aria-pressed', 'false');
       }
@@ -541,7 +559,6 @@
           div.style.cursor = 'pointer';
           div.textContent = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
           div.onclick = () => {
-            // When user selects a suggestion, treat that as the chosen location and disable Check
             placeInput.value = div.textContent;
             suggestionsEl.innerHTML = '';
             checkBtn.disabled = true;
@@ -561,7 +578,6 @@
         alert('Geolocation is not supported by your browser.');
         return;
       }
-      // Indicate primary option chosen
       useLocBtn.setAttribute('aria-pressed', 'true');
       placeInput.value = '';
       suggestionsEl.innerHTML = '';
@@ -584,7 +600,6 @@
         alert('Please enter a place, postcode, or coordinates, or click "Use my location".');
         return;
       }
-      // If coordinates were pasted, accept them directly
       const coordMatch = q.match(/^(-?\d+(\.\d+)?)[, ]+\s*(-?\d+(\.\d+)?)$/);
       if (coordMatch) {
         fetchForecast(coordMatch[1], coordMatch[3]).then(data => {
@@ -600,7 +615,6 @@
           const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
           fetchForecast(r.latitude, r.longitude).then(data => {
             evaluateForecastAndRender(data, label);
-            // After successful update, disable Check to show it's not needed until user types again
             checkBtn.disabled = true;
             checkBtn.setAttribute('aria-disabled', 'true');
           }).catch(e => alert(e.message));
