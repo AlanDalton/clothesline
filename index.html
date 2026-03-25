@@ -107,23 +107,23 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       </div>
     </div>
   </div>
- 
+
   <section id="weeklySummary" class="weekly-summary" aria-live="polite" hidden>
     <h3 id="weeklyHeading">Best times this week for hanging out clothes in <span id="locationName">—</span>:</h3>
     <ul id="weeklyList" aria-live="polite"></ul>
   </section>
- 
+
   <noscript>
     <div class="no-js" role="status">
       This page requires JavaScript to fetch weather forecasts. To learn what enabling JavaScript means and how to turn it on in your browser, see
       <a href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/What_is_JavaScript" target="_blank" rel="noopener noreferrer">What is JavaScript?</a>
     </div>
   </noscript>
- 
+
   <section id="periodSummaries" class="day-list" aria-label="Day summaries"></section>
 </main>
 </div>
- 
+
 <script>
 // Formatting helpers
 function formatTime12(date) {
@@ -133,11 +133,11 @@ function formatTime12(date) {
     return ' ' + s.replace('am','a.m.').replace('pm','p.m.');
   });
 }
- 
+
 function formatDay(date) {
   return date.toLocaleDateString(undefined, { weekday: 'long' });
 }
- 
+
 function timeOfDayLabel(hourIso) {
   const h = new Date(hourIso).getHours();
   if (h >= 6 && h < 12) return 'morning';
@@ -145,13 +145,13 @@ function timeOfDayLabel(hourIso) {
   if (h >= 17 && h < 21) return 'evening';
   return 'night';
 }
- 
+
 // Decision rule
 function isGoodHour(rainMm, showersMm, snowfallMm, windMs, rhPct) {
   const totalPrecip = (rainMm || 0) + (showersMm || 0) + (snowfallMm || 0);
   return totalPrecip < 0.2 && (windMs || 0) < 6 && (rhPct || 0) < 70;
 }
- 
+
 // Fetch helpers
 async function geocode(query) {
   const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(query) + '&count=6&language=en&format=json';
@@ -159,21 +159,35 @@ async function geocode(query) {
   if (!r.ok) throw new Error('Geocoding failed');
   return r.json();
 }
- 
+
 async function fetchForecast(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=rain,showers,snowfall,windspeed_10m,relativehumidity_2m&forecast_days=7&timezone=auto`;
   const r = await fetch(url);
   if (!r.ok) throw new Error('Weather fetch failed');
   return r.json();
 }
- 
-// Derive a friendly place label from the timezone string in the forecast response
-// e.g. "America/New_York" -> "New York", "Europe/London" -> "London"
-function labelFromTimezone(tz) {
-  const city = (tz || '').split('/').pop().replace(/_/g, ' ');
-  return city || null;
+
+// Reverse geocode: lat,lon -> friendly place label using Nominatim (OpenStreetMap)
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&format=json`;
+    const r = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    if (!r.ok) throw new Error('Reverse geocoding failed');
+    const json = await r.json();
+    if (json && json.address) {
+      const a = json.address;
+      const city = a.city || a.town || a.village || a.hamlet || a.county || a.state_district;
+      const country = a.country;
+      if (city && country) return `${city}, ${country}`;
+      if (city) return city;
+      if (json.display_name) return json.display_name.split(',').slice(0, 2).join(',').trim();
+    }
+  } catch (e) {
+    // silent fallback handled by caller
+  }
+  return null;
 }
- 
+
 // Day verdict helper
 function dayVerdictForDate(dateIso, times, goodFlags) {
   const start = dateIso + 'T06:00';
@@ -184,7 +198,7 @@ function dayVerdictForDate(dateIso, times, goodFlags) {
   }
   return { goodHours: count, verdict: count >= 4 ? 'Good' : 'Bad' };
 }
- 
+
 // Best window helper
 function findBestWindow(indices, times, goodFlags) {
   const runs = [];
@@ -208,7 +222,7 @@ function findBestWindow(indices, times, goodFlags) {
   const end = new Date(times[best.end]);
   return `${formatTime12(start)} – ${formatTime12(end)}`;
 }
- 
+
 // Weekly summary helper
 function findGoodPeriods7Days(times, goodFlags) {
   const windows = [];
@@ -245,7 +259,7 @@ function findGoodPeriods7Days(times, goodFlags) {
     return `from ${startDay} ${startTod} until ${endDay} ${endTod}`;
   });
 }
- 
+
 // Render weekly list as bold bullet points
 function renderWeeklyList(locationLabel, times, goodFlags) {
   const weeklySection = document.getElementById('weeklySummary');
@@ -267,7 +281,7 @@ function renderWeeklyList(locationLabel, times, goodFlags) {
   }
   weeklySection.hidden = false;
 }
- 
+
 // Render day summaries
 function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
   const container = document.getElementById('periodSummaries');
@@ -364,7 +378,7 @@ function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags)
     card.appendChild(details);
   });
 }
- 
+
 // Main evaluation
 function evaluateForecastAndRender(data, locationLabel) {
   const times = data.hourly.time;
@@ -377,14 +391,14 @@ function evaluateForecastAndRender(data, locationLabel) {
   renderWeeklyList(locationLabel, times, goodFlags);
   renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
 }
- 
+
 // UI wiring
 const placeInput = document.getElementById('place');
 const suggestionsEl = document.getElementById('suggestions');
 const useLocBtn = document.getElementById('useLoc');
- 
+
 function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
- 
+
 const doSuggest = debounce(async () => {
   const q = placeInput.value.trim();
   suggestionsEl.innerHTML = '';
@@ -412,7 +426,7 @@ const doSuggest = debounce(async () => {
     suggestionsEl.textContent = 'Lookup error';
   }
 }, 300);
- 
+
 placeInput.addEventListener('input', () => {
   const hasText = placeInput.value.trim().length > 0;
   if (hasText) {
@@ -420,7 +434,7 @@ placeInput.addEventListener('input', () => {
   }
   doSuggest();
 });
- 
+
 // Use my location: reverse-geocode to a friendly place name and render
 useLocBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
@@ -434,8 +448,11 @@ useLocBtn.addEventListener('click', () => {
     const lat = p.coords.latitude;
     const lon = p.coords.longitude;
     try {
-      const data = await fetchForecast(lat, lon);
-      const label = labelFromTimezone(data.timezone) || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+      const [data, placeLabel] = await Promise.all([
+        fetchForecast(lat, lon),
+        reverseGeocode(lat, lon)
+      ]);
+      const label = placeLabel || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
       evaluateForecastAndRender(data, label);
     } catch (err) {
       alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
@@ -444,7 +461,7 @@ useLocBtn.addEventListener('click', () => {
     alert('Location denied or unavailable');
   }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 });
 });
- 
+
 // On load: hide weekly summary until a location is chosen
 window.addEventListener('load', () => {
   placeInput.value = '';
