@@ -74,10 +74,10 @@ h2.verdict{font-size:1.0625rem;margin:0.75rem 0 0.25rem 0}
 details{margin-top:0.5rem}
 summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 .meta{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
-.hour-row{display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;border-bottom:0.0625rem solid rgba(0,0,0,0.03)}
-.hour-row:last-child{border-bottom:0}
-.hour-left{font-weight:600}
-.hour-right{color:var(--muted);font-size:0.9rem}
+.meta dl{margin:0;padding:0}
+.meta dt{font-weight:600;padding-top:0.4rem}
+.meta dd{margin:0 0 0.4rem 0;color:var(--muted);font-size:0.9rem;padding-bottom:0.4rem;border-bottom:0.0625rem solid rgba(0,0,0,0.03)}
+.meta dd:last-of-type{border-bottom:0}
 #suggestions{margin-top:0.5rem;color:var(--muted);font-size:0.95rem}
 .no-js{background:#fffbe6;border-left:0.375rem solid #f39c12;padding:0.6rem;border-radius:var(--radius);margin:0.5rem 0;color:#6a4b00;font-size:0.95rem}
 .no-js a{color:#6a4b00;text-decoration:underline}
@@ -358,22 +358,21 @@ function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags)
     details.appendChild(summary);
     const list = document.createElement('div');
     list.className = 'meta';
+    const dl = document.createElement('dl');
     indices.forEach(i => {
       const d = new Date(times[i]);
-      const timeLabel = `${formatTime12(d)}`;
       const totalPrecipHour =
         ((rain && rain[i]) || 0) +
         ((showers && showers[i]) || 0) +
         ((snowfall && snowfall[i]) || 0);
-      const row = document.createElement('div');
-      row.className = 'hour-row';
-      row.innerHTML =
-        `<div class="hour-left"><strong>${timeLabel}</strong></div>` +
-        `<div class="hour-right">☔️ ${totalPrecipHour.toFixed(1)} mm · ` +
-        `💨 ${wind[i]} m/s · relative humidity ${rh[i]}% · ` +
-        `${goodFlags[i] ? 'Good' : 'Poor'}</div>`;
-      list.appendChild(row);
+      const dt = document.createElement('dt');
+      dt.textContent = formatTime12(d);
+      const dd = document.createElement('dd');
+      dd.textContent = `☔️ ${totalPrecipHour.toFixed(1)} mm · 💨 ${wind[i]} m/s · relative humidity ${rh[i]}% · ${goodFlags[i] ? 'Good' : 'Poor'}`;
+      dl.appendChild(dt);
+      dl.appendChild(dd);
     });
+    list.appendChild(dl);
     details.appendChild(list);
     card.appendChild(details);
   });
