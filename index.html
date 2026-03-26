@@ -202,15 +202,62 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       return null;
     }
 
-    // Day verdict helper
-    function dayVerdictForDate(dateIso, times, goodFlags) {
+    // Day verdict helper (now returns richer object)
+    function dayVerdictForDate(dateIso, times, rain, showers, snowfall, wind, rh, goodFlags) {
+      // Consider hours between 06:00 and 20:00 for the day's verdict
       const start = dateIso + 'T06:00';
       const end = dateIso + 'T20:00';
-      let count = 0;
+      let goodHours = 0;
+      let totalPrecip = 0;
+      let maxWind = 0;
+      let sumRh = 0;
+      let countRh = 0;
+
       for (let i = 0; i < times.length; i++) {
-        if (times[i] >= start && times[i] < end && goodFlags[i]) count++;
+        if (times[i] >= start && times[i] < end) {
+          const r = (rain && rain[i]) || 0;
+          const s = (showers && showers[i]) || 0;
+          const sn = (snowfall && snowfall[i]) || 0;
+          const w = (wind && wind[i]) || 0;
+          const h = (rh && rh[i]) || 0;
+
+          totalPrecip += r + s + sn;
+          if (w > maxWind) maxWind = w;
+          sumRh += h;
+          countRh++;
+
+          if (goodFlags[i]) goodHours++;
+        }
       }
-      return { goodHours: count, verdict: count >= 4 ? 'Good' : 'Bad' };
+
+      const avgRh = countRh ? Math.round(sumRh / countRh) : 0;
+
+      // Determine severity using unified rules
+      // If there are enough good hours, mark as good.
+      // Otherwise, prefer 'bad' if precipitation is significant,
+      // 'fair' if wind is the main issue, else 'bad'.
+      let severity;
+      if (goodHours >= 4) {
+        severity = 'good';
+      } else if (totalPrecip >= 0.2) {
+        severity = 'bad';
+      } else if (maxWind >= 6) {
+        severity = 'fair';
+      } else {
+        severity = 'bad';
+      }
+
+      // Also provide a short verdict string for backward compatibility
+      const verdict = severity === 'good' ? 'Good' : 'Bad';
+
+      return {
+        goodHours,
+        totalPrecip: Number(totalPrecip.toFixed(2)),
+        maxWind: Number(maxWind.toFixed(2)),
+        avgRh,
+        severity,
+        verdict
+      };
     }
 
     // Best window helper
@@ -296,7 +343,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       weeklySection.hidden = false;
     }
 
-    // Render day summaries
+    // Render day summaries (uses richer verdict object)
     function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
       const container = document.getElementById('periodSummaries');
       container.innerHTML = '';
@@ -317,29 +364,33 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           dayKey === todayIso ? 'Today is' :
           dayKey === tomorrowIso ? 'Tomorrow is' :
           `${dayName} is`;
-        let totalPrecip = 0;
-        let maxWind = 0;
-        let sumRh = 0;
-        indices.forEach(i => {
-          totalPrecip += (rain[i] || 0) + (showers[i] || 0) + (snowfall[i] || 0);
-          if ((wind[i] || 0) > maxWind) maxWind = wind[i];
-          sumRh += (rh[i] || 0);
-        });
-        const avgRh = Math.round(sumRh / indices.length || 0);
-        const dayGoodInfo = dayVerdictForDate(dayKey, times, goodFlags);
-        const verdictText = dayGoodInfo.verdict === 'Good'
-          ? 'good for hanging out clothes.'
-          : 'bad for hanging out clothes.';
+
+        // Use the richer verdict helper to get aggregated metrics and severity
+        const dayInfo = dayVerdictForDate(dayKey, times, rain, showers, snowfall, wind, rh, goodFlags);
+
+        const totalPrecip = dayInfo.totalPrecip;
+        const maxWind = dayInfo.maxWind;
+        const avgRh = dayInfo.avgRh;
+        const severity = dayInfo.severity;
+
+        // Map severity to human-friendly verdict text
+        let verdictText;
+        if (severity === 'good') {
+          verdictText = 'good for hanging out clothes.';
+        } else if (severity === 'fair') {
+          verdictText = 'fair — suitable for heavier items or when secured.';
+        } else {
+          verdictText = 'bad for hanging out clothes.';
+        }
+
         const card = document.createElement('div');
-        card.className =
-          'card ' +
-          (dayGoodInfo.verdict === 'Good'
-            ? 'good'
-            : (totalPrecip >= 0.2 ? 'bad' : (maxWind >= 6 ? 'fair' : 'bad')));
+        card.className = 'card ' + severity;
+
         const h2 = document.createElement('h2');
         h2.className = 'verdict';
         h2.textContent = `${labelPrefix} ${verdictText}`;
         card.appendChild(h2);
+
         const ul = document.createElement('ul');
         const li1 = document.createElement('li');
         li1.textContent = `☔️ Total precipitation: ${totalPrecip.toFixed(1)} mm`;
@@ -351,7 +402,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         li3.textContent = `💧 Relative humidity: ${avgRh}%`;
         ul.appendChild(li3);
         const li4 = document.createElement('li');
-        if (dayGoodInfo.verdict === 'Good') {
+        if (severity === 'good') {
           li4.textContent = `👍 Best window: ${findBestWindow(indices, times, goodFlags)}`;
         } else {
           if (totalPrecip >= 0.2) {
@@ -365,6 +416,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         ul.appendChild(li4);
         card.appendChild(ul);
         container.appendChild(card);
+
         const details = document.createElement('details');
         details.open = false;
         const summary = document.createElement('summary');
@@ -380,7 +432,8 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
             ((showers && showers[i]) || 0) +
             ((snowfall && snowfall[i]) || 0);
           const dt = document.createElement('dt');
-          dt.textContent = formatTime12(d);
+          // include date to avoid duplicate dt names within a single dl
+          dt.textContent = `${formatDay(d)} ${formatTime12(d)}`;
           const dd = document.createElement('dd');
           dd.textContent = `☔️ ${totalPrecipHour.toFixed(1)} mm · 💨 ${wind[i]} m/s · relative humidity ${rh[i]}% · ${goodFlags[i] ? 'Good' : 'Poor'}`;
           dl.appendChild(dt);
