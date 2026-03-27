@@ -100,21 +100,19 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 <body>
   <div class="page" role="document">
     <header class="site-header">
-      <h1>Should you hang out your washing today?</h1>
-      <p class="lead">Quick, plain advice on whether today's weather will dry your clothes outside.</p>
+      <h1><span aria-hidden="true">🧺</span> Should you hang out your washing today?</h1>
     </header>
 
     <main aria-live="polite">
       <div class="controls" role="group" aria-label="Location controls">
         <div class="col" style="flex-basis:18rem;flex-shrink:0">
-          <button id="useLoc" class="btn btn-primary" type="button" aria-describedby="useLocNote" aria-pressed="false">Use my location</button>
-          <div id="useLocNote" class="muted-note">Allow the browser to detect your location. This is the quickest option.</div>
+          <button id="useLoc" class="btn btn-primary" type="button" aria-pressed="false">Check for my location</button>
         </div>
 
         <div class="col" style="flex:1;min-width:0">
           <div style="display:flex;gap:0.5rem;align-items:flex-start">
             <div style="flex:1;min-width:0">
-              <label for="place">Check another location:</label>
+              <label for="place">…or check for another location</label>
               <input id="place" type="text" placeholder="Town, postcode, or coordinates" autocomplete="off" aria-label="Check another location">
               <div id="suggestions" aria-hidden="false"></div>
             </div>
@@ -202,9 +200,8 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       return null;
     }
 
-    // Day verdict helper (now returns richer object)
+    // Day verdict helper (single source of truth)
     function dayVerdictForDate(dateIso, times, rain, showers, snowfall, wind, rh, goodFlags) {
-      // Consider hours between 06:00 and 20:00 for the day's verdict
       const start = dateIso + 'T06:00';
       const end = dateIso + 'T20:00';
       let goodHours = 0;
@@ -232,10 +229,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 
       const avgRh = countRh ? Math.round(sumRh / countRh) : 0;
 
-      // Determine severity using unified rules
-      // If there are enough good hours, mark as good.
-      // Otherwise, prefer 'bad' if precipitation is significant,
-      // 'fair' if wind is the main issue, else 'bad'.
       let severity;
       if (goodHours >= 4) {
         severity = 'good';
@@ -247,16 +240,12 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         severity = 'bad';
       }
 
-      // Also provide a short verdict string for backward compatibility
-      const verdict = severity === 'good' ? 'Good' : 'Bad';
-
       return {
         goodHours,
         totalPrecip: Number(totalPrecip.toFixed(2)),
         maxWind: Number(maxWind.toFixed(2)),
         avgRh,
-        severity,
-        verdict
+        severity
       };
     }
 
@@ -365,7 +354,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           dayKey === tomorrowIso ? 'Tomorrow is' :
           `${dayName} is`;
 
-        // Use the richer verdict helper to get aggregated metrics and severity
         const dayInfo = dayVerdictForDate(dayKey, times, rain, showers, snowfall, wind, rh, goodFlags);
 
         const totalPrecip = dayInfo.totalPrecip;
@@ -373,7 +361,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         const avgRh = dayInfo.avgRh;
         const severity = dayInfo.severity;
 
-        // Map severity to human-friendly verdict text
         let verdictText;
         if (severity === 'good') {
           verdictText = 'good for hanging out clothes.';
@@ -432,7 +419,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
             ((showers && showers[i]) || 0) +
             ((snowfall && snowfall[i]) || 0);
           const dt = document.createElement('dt');
-          // include date to avoid duplicate dt names within a single dl
           dt.textContent = `${formatDay(d)} ${formatTime12(d)}`;
           const dd = document.createElement('dd');
           dd.textContent = `☔️ ${totalPrecipHour.toFixed(1)} mm · 💨 ${wind[i]} m/s · relative humidity ${rh[i]}% · ${goodFlags[i] ? 'Good' : 'Poor'}`;
