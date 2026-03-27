@@ -364,4 +364,266 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
     // Render weekly list as bold bullet points
     function renderWeeklyList(locationLabel, times, goodFlags) {
       const weeklySection = document.getElementById('weeklySummary');
-      const location
+      const locationName = document.getElementById('locationName');
+      const listEl = document.getElementById('weeklyList');
+      const periods = findGoodPeriods7Days(times, goodFlags);
+      locationName.textContent = locationLabel || 'Unknown location';
+      listEl.innerHTML = '';
+      if (!periods || periods.length === 0) {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>No reliably dry windows are forecast this week.</strong>';
+        listEl.appendChild(li);
+      } else {
+        periods.forEach(p => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${p}</strong>`;
+          listEl.appendChild(li);
+        });
+      }
+      weeklySection.hidden = false;
+      // show legend when we have results
+      const legend = document.getElementById('hourlyLegend');
+      if (legend) legend.hidden = false;
+    }
+
+    // Render day summaries (uses richer verdict object)
+    function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
+      const container = document.getElementById('periodSummaries');
+      container.innerHTML = '';
+      const maxHours = Math.min(times.length, 7 * 24);
+      const days = {};
+      for (let i = 0; i < maxHours; i++) {
+        const d = new Date(times[i]);
+        const dayKey = d.toISOString().slice(0,10);
+        if (!days[dayKey]) days[dayKey] = [];
+        days[dayKey].push(i);
+      }
+      const todayIso = new Date().toISOString().slice(0,10);
+      const tomorrowIso = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+      Object.keys(days).forEach(dayKey => {
+        const indices = days[dayKey];
+        const dayName = formatDay(new Date(times[indices[0]]));
+        const labelPrefix =
+          dayKey === todayIso ? 'Today is' :
+          dayKey === tomorrowIso ? 'Tomorrow is' :
+          `${dayName} is`;
+
+        const dayInfo = dayVerdictForDate(dayKey, times, rain, showers, snowfall, wind, rh, goodFlags);
+
+        const totalPrecip = dayInfo.totalPrecip;
+        const maxWind = dayInfo.maxWind;
+        const avgRh = dayInfo.avgRh;
+        const severity = dayInfo.severity;
+
+        let verdictText;
+        if (severity === 'good') {
+          verdictText = 'good for hanging out clothes.';
+        } else if (severity === 'fair') {
+          verdictText = 'fair — suitable for heavier items or when secured.';
+        } else {
+          verdictText = 'bad for hanging out clothes.';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'card ' + severity;
+
+        const h2 = document.createElement('h2');
+        h2.className = 'verdict';
+        h2.textContent = `${labelPrefix} ${verdictText}`;
+        card.appendChild(h2);
+
+        const ul = document.createElement('ul');
+        const li1 = document.createElement('li');
+        li1.textContent = `☔️ Total precipitation: ${totalPrecip.toFixed(1)} mm`;
+        ul.appendChild(li1);
+        const li2 = document.createElement('li');
+        li2.textContent = `💨 Wind: ${maxWind.toFixed(1)} m/s`;
+        ul.appendChild(li2);
+        const li3 = document.createElement('li');
+        li3.textContent = `💧 Relative humidity: ${avgRh}%`;
+        ul.appendChild(li3);
+        const li4 = document.createElement('li');
+        if (severity === 'good') {
+          li4.textContent = `👍 Best window: ${findBestWindow(indices, times, goodFlags)}`;
+        } else {
+          if (totalPrecip >= 0.2) {
+            li4.textContent = `⚠️ Rain likely — outdoor drying unreliable`;
+          } else if (maxWind >= 6) {
+            li4.textContent = `⚠️ Strong wind — secure lighter items`;
+          } else {
+            li4.textContent = `⚠️ High humidity may slow drying`;
+          }
+        }
+        ul.appendChild(li4);
+        card.appendChild(ul);
+        container.appendChild(card);
+
+        const details = document.createElement('details');
+        details.open = false;
+        const summary = document.createElement('summary');
+        summary.textContent = `Show hourly details for ${dayName}`;
+        details.appendChild(summary);
+        const list = document.createElement('div');
+        list.className = 'meta';
+        const dl = document.createElement('dl');
+
+        // Build hourly rows: time (dt) + coloured dd starting with emoji and factors
+        indices.forEach(i => {
+          const d = new Date(times[i]);
+          const totalPrecipHour =
+            ((rain && rain[i]) || 0) +
+            ((showers && showers[i]) || 0) +
+            ((snowfall && snowfall[i]) || 0);
+          const w = (wind && wind[i]) || 0;
+          const h = (rh && rh[i]) || 0;
+
+          // Determine hour severity (same family of rules)
+          let hourSeverity;
+          if (goodFlags[i]) {
+            hourSeverity = 'good';
+          } else if (totalPrecipHour >= 0.2) {
+            hourSeverity = 'bad';
+          } else if (w >= 6) {
+            hourSeverity = 'fair';
+          } else {
+            hourSeverity = 'bad';
+          }
+
+          const dt = document.createElement('dt');
+          dt.textContent = formatTime12(d);
+
+          const dd = document.createElement('dd');
+          dd.className = 'hour ' + hourSeverity;
+
+          // Emoji: make keyboard-focusable and readable by AT
+          const emoji = document.createElement('span');
+          emoji.className = 'hour-emoji';
+          emoji.setAttribute('tabindex', '0'); // keyboard-focusable
+          emoji.setAttribute('role', 'img');
+          emoji.setAttribute('aria-label', goodFlags[i] ? 'Good hour for drying' : 'Poor hour for drying');
+          emoji.textContent = goodFlags[i] ? '👍' : '👎';
+
+          // Factors in parentheses; replace "relative humidity" with 🥵
+          const factors = document.createElement('span');
+          factors.className = 'hour-factors';
+          factors.textContent = ` (☔ ${totalPrecipHour.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 🥵 ${h}%)`;
+
+          dd.appendChild(emoji);
+          dd.appendChild(factors);
+
+          dl.appendChild(dt);
+          dl.appendChild(dd);
+        });
+
+        list.appendChild(dl);
+        details.appendChild(list);
+        card.appendChild(details);
+      });
+    }
+
+    // Main evaluation
+    function evaluateForecastAndRender(data, locationLabel) {
+      const times = data.hourly.time;
+      const rain = data.hourly.rain || [];
+      const showers = data.hourly.showers || [];
+      const snowfall = data.hourly.snowfall || [];
+      const wind = data.hourly.windspeed_10m || [];
+      const rh = data.hourly.relativehumidity_2m || [];
+      const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
+      renderWeeklyList(locationLabel, times, goodFlags);
+      renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
+    }
+
+    // Defer DOM wiring until load and guard with try/catch
+    window.addEventListener('load', () => {
+      try {
+        // UI wiring (now safely after DOM is ready)
+        const placeInput = document.getElementById('place');
+        const suggestionsEl = document.getElementById('suggestions');
+        const useLocBtn = document.getElementById('useLoc');
+
+        function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+        const doSuggest = debounce(async () => {
+          const q = placeInput.value.trim();
+          suggestionsEl.innerHTML = '';
+          if (!q) return;
+          try {
+            const geo = await geocode(q);
+            if (!geo.results || geo.results.length === 0) {
+              suggestionsEl.textContent = 'No matches';
+              return;
+            }
+            geo.results.forEach(r => {
+              const div = document.createElement('div');
+              div.style.padding = '0.4rem';
+              div.style.cursor = 'pointer';
+              const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
+              div.textContent = label;
+              div.onclick = () => {
+                placeInput.value = label;
+                suggestionsEl.innerHTML = '';
+                fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, label)).catch(e => alert(e.message));
+              };
+              suggestionsEl.appendChild(div);
+            });
+          } catch (e) {
+            suggestionsEl.textContent = 'Lookup error';
+          }
+        }, 300);
+
+        placeInput.addEventListener('input', () => {
+          const hasText = placeInput.value.trim().length > 0;
+          if (hasText) {
+            useLocBtn.setAttribute('aria-pressed', 'false');
+          }
+          doSuggest();
+        });
+
+        // Use my location: reverse-geocode to a friendly place name and render
+        useLocBtn.addEventListener('click', () => {
+          if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+          }
+          useLocBtn.setAttribute('aria-pressed', 'true');
+          placeInput.value = '';
+          suggestionsEl.innerHTML = '';
+          navigator.geolocation.getCurrentPosition(async p => {
+            const lat = p.coords.latitude;
+            const lon = p.coords.longitude;
+            try {
+              const [data, placeLabel] = await Promise.all([
+                fetchForecast(lat, lon),
+                reverseGeocode(lat, lon)
+              ]);
+              const label = placeLabel || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+              evaluateForecastAndRender(data, label);
+            } catch (err) {
+              alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
+            }
+          }, err => {
+            alert('Location denied or unavailable');
+          }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 });
+        });
+
+        // On load: hide weekly summary until a location is chosen
+        placeInput.value = '';
+        suggestionsEl.innerHTML = '';
+        document.getElementById('weeklySummary').hidden = true;
+        document.getElementById('locationName').textContent = '—';
+        useLocBtn.setAttribute('aria-pressed', 'false');
+        // hide legend until we have results
+        const legend = document.getElementById('hourlyLegend');
+        if (legend) legend.hidden = true;
+
+        console.log('Clothesline app initialized.');
+      } catch (err) {
+        console.error('Initialization error in Clothesline app:', err);
+        // Re-throw if you want the browser to show the error stack
+        // throw err;
+      }
+    });
+  </script>
+</body>
+</html>
