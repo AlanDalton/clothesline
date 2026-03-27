@@ -29,6 +29,7 @@
   --primary:#2ecc71;
 }
 
+/* Base layout and typography */
 html{font-size:100%}
 body{
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -39,7 +40,6 @@ body{
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
-
 .page{
   width:100%;
   max-width:var(--max-width);
@@ -48,11 +48,11 @@ body{
   box-sizing:border-box;
   display:block;
 }
-
 header.site-header{margin-bottom:1rem}
 h1{font-size:clamp(1.5rem,2.2vw,2rem);margin:0;line-height:1.05}
 .lead{margin:0.6rem 0 0 0;color:var(--muted);font-size:0.98rem;max-width:60ch}
 
+/* Controls */
 .controls{display:flex;gap:0.75rem;align-items:flex-start;margin:1.25rem 0;flex-wrap:wrap}
 .controls .col{min-width:0}
 .btn{height:2.5rem;padding:0 0.75rem;border-radius:var(--radius);border:0.0625rem solid #bbb;background:#fff;cursor:pointer;font-size:0.95rem}
@@ -62,9 +62,11 @@ label{font-size:0.95rem;display:block;margin-bottom:0.25rem}
 input[type="text"]{height:2.5rem;padding:0.5rem 0.6rem;border:0.0625rem solid #ccc;border-radius:var(--radius);font-size:1rem;min-width:0;width:100%;box-sizing:border-box;background:#fff}
 .muted-note{font-size:0.9rem;color:var(--muted);margin-top:0.35rem}
 
+/* Focus */
 :focus{outline:none}
 input[type="text"]:focus, .btn:focus {box-shadow:0 0 0 0.25rem rgba(46,204,113,0.12);border-color:var(--focus-color)}
 
+/* Weekly summary and cards */
 .weekly-summary{margin-top:1rem;padding:0.9rem 1rem;background:#fff;border-radius:0.5rem;box-shadow:0 0.125rem 0.375rem rgba(0,0,0,0.04);border-left:0.375rem solid var(--primary);font-size:1rem;color:var(--muted);max-width:70ch}
 .weekly-summary h3{margin:0 0 0.5rem 0;font-size:1rem;color:var(--text);font-weight:600}
 .weekly-summary ul{margin:0;padding-left:1.2rem}
@@ -80,6 +82,7 @@ h2.verdict{font-size:1.0625rem;margin:0.75rem 0 0.25rem 0}
 .card ul{margin:0.35rem 0 0 1.2rem;padding:0;color:var(--muted);font-size:0.95rem}
 .card li{margin:0.35rem 0;list-style:disc inside}
 
+/* Details and meta */
 details{margin-top:0.5rem}
 summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 .meta{color:var(--muted);font-size:0.9rem;margin-top:0.5rem}
@@ -88,11 +91,51 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 .meta dd{margin:0 0 0.4rem 0;color:var(--muted);font-size:0.9rem;padding-bottom:0.4rem;border-bottom:0.0625rem solid rgba(0,0,0,0.03)}
 .meta dd:last-of-type{border-bottom:0}
 
-#suggestions{margin-top:0.5rem;color:var(--muted);font-size:0.95rem}
+/* Hourly row backgrounds matching day severity */
+.meta dd.hour {
+  display:block;
+  padding:0.45rem 0.6rem;
+  border-radius:0.375rem;
+  margin:0.35rem 0 0.6rem 0;
+  color:var(--muted);
+  font-size:0.95rem;
+}
 
-.no-js{background:#fffbe6;border-left:0.375rem solid #f39c12;padding:0.6rem;border-radius:var(--radius);margin:0.5rem 0;color:#6a4b00;font-size:0.95rem}
-.no-js a{color:#6a4b00;text-decoration:underline}
+/* Severity variants for hourly rows */
+.meta dd.hour.good { background:var(--good-bg); border-left:0.25rem solid #2ecc71; }
+.meta dd.hour.fair { background:var(--fair-bg); border-left:0.25rem solid #f39c12; }
+.meta dd.hour.bad  { background:var(--bad-bg);  border-left:0.25rem solid #e74c3c; }
 
+/* Emoji and factors styling */
+.meta dd.hour .hour-emoji { margin-right:0.5rem; font-size:1.05rem; line-height:1; display:inline-block; vertical-align:middle; }
+.meta dd.hour .hour-factors { color:var(--muted); }
+
+/* Legend */
+.legend {
+  margin-top:0.5rem;
+  font-size:0.9rem;
+  color:var(--muted);
+  display:flex;
+  gap:1rem;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.legend .item { display:flex; gap:0.4rem; align-items:center; }
+.legend .swatch { width:1rem; height:1rem; border-radius:0.25rem; display:inline-block; vertical-align:middle; }
+.legend .swatch.good { background:var(--good-bg); border:2px solid #2ecc71; }
+.legend .swatch.fair { background:var(--fair-bg); border:2px solid #f39c12; }
+.legend .swatch.bad  { background:var(--bad-bg);  border:2px solid #e74c3c; }
+
+/* Small utility for visually hidden text if needed */
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* Responsive */
 @media (max-width:48rem){.controls{flex-direction:column;align-items:stretch}.btn{width:100%}.btn-primary{order:-1}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
@@ -131,6 +174,14 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           <a href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/What_is_JavaScript" target="_blank" rel="noopener noreferrer">What is JavaScript?</a>
         </div>
       </noscript>
+
+      <!-- Legend and hourly explanation (Optional polish applied) -->
+      <div id="hourlyLegend" class="legend" hidden aria-hidden="false">
+        <div class="item"><span class="swatch good" aria-hidden="true"></span> <span>Good conditions</span></div>
+        <div class="item"><span class="swatch fair" aria-hidden="true"></span> <span>Fair conditions (wind may be strong)</span></div>
+        <div class="item"><span class="swatch bad" aria-hidden="true"></span> <span>Bad conditions (precipitation likely)</span></div>
+        <div class="item" style="margin-left:auto"><span aria-hidden="true">👍</span> Good hour · <span aria-hidden="true">👎</span> Poor hour · <span aria-hidden="true">🥵</span> = humidity</div>
+      </div>
 
       <section id="periodSummaries" class="day-list" aria-label="Day summaries"></section>
     </main>
@@ -313,215 +364,4 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
     // Render weekly list as bold bullet points
     function renderWeeklyList(locationLabel, times, goodFlags) {
       const weeklySection = document.getElementById('weeklySummary');
-      const locationName = document.getElementById('locationName');
-      const listEl = document.getElementById('weeklyList');
-      const periods = findGoodPeriods7Days(times, goodFlags);
-      locationName.textContent = locationLabel || 'Unknown location';
-      listEl.innerHTML = '';
-      if (!periods || periods.length === 0) {
-        const li = document.createElement('li');
-        li.innerHTML = '<strong>No reliably dry windows are forecast this week.</strong>';
-        listEl.appendChild(li);
-      } else {
-        periods.forEach(p => {
-          const li = document.createElement('li');
-          li.innerHTML = `<strong>${p}</strong>`;
-          listEl.appendChild(li);
-        });
-      }
-      weeklySection.hidden = false;
-    }
-
-    // Render day summaries (uses richer verdict object)
-    function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
-      const container = document.getElementById('periodSummaries');
-      container.innerHTML = '';
-      const maxHours = Math.min(times.length, 7 * 24);
-      const days = {};
-      for (let i = 0; i < maxHours; i++) {
-        const d = new Date(times[i]);
-        const dayKey = d.toISOString().slice(0,10);
-        if (!days[dayKey]) days[dayKey] = [];
-        days[dayKey].push(i);
-      }
-      const todayIso = new Date().toISOString().slice(0,10);
-      const tomorrowIso = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
-      Object.keys(days).forEach(dayKey => {
-        const indices = days[dayKey];
-        const dayName = formatDay(new Date(times[indices[0]]));
-        const labelPrefix =
-          dayKey === todayIso ? 'Today is' :
-          dayKey === tomorrowIso ? 'Tomorrow is' :
-          `${dayName} is`;
-
-        const dayInfo = dayVerdictForDate(dayKey, times, rain, showers, snowfall, wind, rh, goodFlags);
-
-        const totalPrecip = dayInfo.totalPrecip;
-        const maxWind = dayInfo.maxWind;
-        const avgRh = dayInfo.avgRh;
-        const severity = dayInfo.severity;
-
-        let verdictText;
-        if (severity === 'good') {
-          verdictText = 'good for hanging out clothes.';
-        } else if (severity === 'fair') {
-          verdictText = 'fair — suitable for heavier items or when secured.';
-        } else {
-          verdictText = 'bad for hanging out clothes.';
-        }
-
-        const card = document.createElement('div');
-        card.className = 'card ' + severity;
-
-        const h2 = document.createElement('h2');
-        h2.className = 'verdict';
-        h2.textContent = `${labelPrefix} ${verdictText}`;
-        card.appendChild(h2);
-
-        const ul = document.createElement('ul');
-        const li1 = document.createElement('li');
-        li1.textContent = `☔️ Total precipitation: ${totalPrecip.toFixed(1)} mm`;
-        ul.appendChild(li1);
-        const li2 = document.createElement('li');
-        li2.textContent = `💨 Wind: ${maxWind.toFixed(1)} m/s`;
-        ul.appendChild(li2);
-        const li3 = document.createElement('li');
-        li3.textContent = `💧 Relative humidity: ${avgRh}%`;
-        ul.appendChild(li3);
-        const li4 = document.createElement('li');
-        if (severity === 'good') {
-          li4.textContent = `👍 Best window: ${findBestWindow(indices, times, goodFlags)}`;
-        } else {
-          if (totalPrecip >= 0.2) {
-            li4.textContent = `⚠️ Rain likely — outdoor drying unreliable`;
-          } else if (maxWind >= 6) {
-            li4.textContent = `⚠️ Strong wind — secure lighter items`;
-          } else {
-            li4.textContent = `⚠️ High humidity may slow drying`;
-          }
-        }
-        ul.appendChild(li4);
-        card.appendChild(ul);
-        container.appendChild(card);
-
-        const details = document.createElement('details');
-        details.open = false;
-        const summary = document.createElement('summary');
-        summary.textContent = `Show hourly details for ${dayName}`;
-        details.appendChild(summary);
-        const list = document.createElement('div');
-        list.className = 'meta';
-        const dl = document.createElement('dl');
-        indices.forEach(i => {
-          const d = new Date(times[i]);
-          const totalPrecipHour =
-            ((rain && rain[i]) || 0) +
-            ((showers && showers[i]) || 0) +
-            ((snowfall && snowfall[i]) || 0);
-          const dt = document.createElement('dt');
-          dt.textContent = `${formatDay(d)} ${formatTime12(d)}`;
-          const dd = document.createElement('dd');
-          dd.textContent = `☔️ ${totalPrecipHour.toFixed(1)} mm · 💨 ${wind[i]} m/s · relative humidity ${rh[i]}% · ${goodFlags[i] ? 'Good' : 'Poor'}`;
-          dl.appendChild(dt);
-          dl.appendChild(dd);
-        });
-        list.appendChild(dl);
-        details.appendChild(list);
-        card.appendChild(details);
-      });
-    }
-
-    // Main evaluation
-    function evaluateForecastAndRender(data, locationLabel) {
-      const times = data.hourly.time;
-      const rain = data.hourly.rain || [];
-      const showers = data.hourly.showers || [];
-      const snowfall = data.hourly.snowfall || [];
-      const wind = data.hourly.windspeed_10m || [];
-      const rh = data.hourly.relativehumidity_2m || [];
-      const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
-      renderWeeklyList(locationLabel, times, goodFlags);
-      renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
-    }
-
-    // UI wiring
-    const placeInput = document.getElementById('place');
-    const suggestionsEl = document.getElementById('suggestions');
-    const useLocBtn = document.getElementById('useLoc');
-
-    function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-    const doSuggest = debounce(async () => {
-      const q = placeInput.value.trim();
-      suggestionsEl.innerHTML = '';
-      if (!q) return;
-      try {
-        const geo = await geocode(q);
-        if (!geo.results || geo.results.length === 0) {
-          suggestionsEl.textContent = 'No matches';
-          return;
-        }
-        geo.results.forEach(r => {
-          const div = document.createElement('div');
-          div.style.padding = '0.4rem';
-          div.style.cursor = 'pointer';
-          const label = r.name + (r.admin1 ? ', ' + r.admin1 : '') + (r.country ? ', ' + r.country : '');
-          div.textContent = label;
-          div.onclick = () => {
-            placeInput.value = label;
-            suggestionsEl.innerHTML = '';
-            fetchForecast(r.latitude, r.longitude).then(data => evaluateForecastAndRender(data, label)).catch(e => alert(e.message));
-          };
-          suggestionsEl.appendChild(div);
-        });
-      } catch (e) {
-        suggestionsEl.textContent = 'Lookup error';
-      }
-    }, 300);
-
-    placeInput.addEventListener('input', () => {
-      const hasText = placeInput.value.trim().length > 0;
-      if (hasText) {
-        useLocBtn.setAttribute('aria-pressed', 'false');
-      }
-      doSuggest();
-    });
-
-    // Use my location: reverse-geocode to a friendly place name and render
-    useLocBtn.addEventListener('click', () => {
-      if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser.');
-        return;
-      }
-      useLocBtn.setAttribute('aria-pressed', 'true');
-      placeInput.value = '';
-      suggestionsEl.innerHTML = '';
-      navigator.geolocation.getCurrentPosition(async p => {
-        const lat = p.coords.latitude;
-        const lon = p.coords.longitude;
-        try {
-          const [data, placeLabel] = await Promise.all([
-            fetchForecast(lat, lon),
-            reverseGeocode(lat, lon)
-          ]);
-          const label = placeLabel || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
-          evaluateForecastAndRender(data, label);
-        } catch (err) {
-          alert('Unable to fetch weather or location name. ' + (err && err.message ? err.message : ''));
-        }
-      }, err => {
-        alert('Location denied or unavailable');
-      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 });
-    });
-
-    // On load: hide weekly summary until a location is chosen
-    window.addEventListener('load', () => {
-      placeInput.value = '';
-      suggestionsEl.innerHTML = '';
-      document.getElementById('weeklySummary').hidden = true;
-      document.getElementById('locationName').textContent = '—';
-      useLocBtn.setAttribute('aria-pressed', 'false');
-    });
-  </script>
-</body>
-</html>
+      const location
