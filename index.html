@@ -50,7 +50,6 @@ body{
 }
 header.site-header{margin-bottom:1rem}
 h1{font-size:clamp(1.5rem,2.2vw,2rem);margin:0;line-height:1.05}
-.lead{margin:0.6rem 0 0 0;color:var(--muted);font-size:0.98rem;max-width:60ch}
 
 /* Controls */
 .controls{display:flex;gap:0.75rem;align-items:flex-start;margin:1.25rem 0;flex-wrap:wrap}
@@ -110,22 +109,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 .meta dd.hour .hour-emoji { margin-right:0.5rem; font-size:1.05rem; line-height:1; display:inline-block; vertical-align:middle; }
 .meta dd.hour .hour-factors { color:var(--muted); }
 
-/* Legend */
-.legend {
-  margin-top:0.5rem;
-  font-size:0.9rem;
-  color:var(--muted);
-  display:flex;
-  gap:1rem;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.legend .item { display:flex; gap:0.4rem; align-items:center; }
-.legend .swatch { width:1rem; height:1rem; border-radius:0.25rem; display:inline-block; vertical-align:middle; }
-.legend .swatch.good { background:var(--good-bg); border:2px solid #2ecc71; }
-.legend .swatch.fair { background:var(--fair-bg); border:2px solid #f39c12; }
-.legend .swatch.bad  { background:var(--bad-bg);  border:2px solid #e74c3c; }
-
 /* Small utility for visually hidden text if needed */
 .visually-hidden {
   position: absolute !important;
@@ -174,14 +157,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           <a href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/What_is_JavaScript" target="_blank" rel="noopener noreferrer">What is JavaScript?</a>
         </div>
       </noscript>
-
-      <!-- Legend and hourly explanation (Optional polish applied) -->
-      <div id="hourlyLegend" class="legend" hidden aria-hidden="false">
-        <div class="item"><span class="swatch good" aria-hidden="true"></span> <span>Good conditions</span></div>
-        <div class="item"><span class="swatch fair" aria-hidden="true"></span> <span>Fair conditions (wind may be strong)</span></div>
-        <div class="item"><span class="swatch bad" aria-hidden="true"></span> <span>Bad conditions (precipitation likely)</span></div>
-        <div class="item" style="margin-left:auto"><span aria-hidden="true">👍</span> Good hour · <span aria-hidden="true">👎</span> Poor hour · <span aria-hidden="true">🥵</span> = humidity</div>
-      </div>
 
       <section id="periodSummaries" class="day-list" aria-label="Day summaries"></section>
     </main>
@@ -381,9 +356,6 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         });
       }
       weeklySection.hidden = false;
-      // show legend when we have results
-      const legend = document.getElementById('hourlyLegend');
-      if (legend) legend.hidden = false;
     }
 
     // Render day summaries (uses richer verdict object)
@@ -495,12 +467,13 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           const dd = document.createElement('dd');
           dd.className = 'hour ' + hourSeverity;
 
-          // Emoji: make keyboard-focusable and readable by AT
+          // Emoji: provide a one-word aria-label for screen readers
           const emoji = document.createElement('span');
           emoji.className = 'hour-emoji';
           emoji.setAttribute('tabindex', '0'); // keyboard-focusable
           emoji.setAttribute('role', 'img');
-          emoji.setAttribute('aria-label', goodFlags[i] ? 'Good hour for drying' : 'Poor hour for drying');
+          // one-word aria-label as requested: "good" or "poor"
+          emoji.setAttribute('aria-label', goodFlags[i] ? 'good' : 'poor');
           emoji.textContent = goodFlags[i] ? '👍' : '👎';
 
           // Factors in parentheses; replace "relative humidity" with 🥵
@@ -613,15 +586,10 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         document.getElementById('weeklySummary').hidden = true;
         document.getElementById('locationName').textContent = '—';
         useLocBtn.setAttribute('aria-pressed', 'false');
-        // hide legend until we have results
-        const legend = document.getElementById('hourlyLegend');
-        if (legend) legend.hidden = true;
 
         console.log('Clothesline app initialized.');
       } catch (err) {
         console.error('Initialization error in Clothesline app:', err);
-        // Re-throw if you want the browser to show the error stack
-        // throw err;
       }
     });
   </script>
