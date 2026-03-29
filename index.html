@@ -1,17 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Should you hang out your washing today? — Clothesline Weather Advisor</title>
-<meta name="description" content="Quick, plain advice on whether today's weather will dry your clothes outside. Uses rain, showers, snowfall, wind and relative humidity.">
-<meta property="og:title" content="Should you hang out your washing today?">
-<meta name="twitter:title" content="Should you hang out your washing today?">
-<meta property="og:description" content="Quick, plain advice on whether today's weather will dry your clothes outside.">
-<meta name="twitter:description" content="Quick, plain advice on whether today's weather will dry your clothes outside.">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="https://alandalton.github.io/clothesline/">
+<meta name="description" content="Quick, plain advice on whether today's weather will dry your clothes outside. Uses rain, showers, snowfall, wind and relative humidity." />
+<link rel="canonical" href="https://alandalton.github.io/clothesline/" />
 
 <style>
 :root{
@@ -55,7 +49,7 @@ h1{font-size:clamp(1.5rem,2.2vw,2rem);margin:0;line-height:1.05}
 .controls{display:flex;gap:0.75rem;align-items:flex-start;margin:1.25rem 0;flex-wrap:wrap}
 .controls .col{min-width:0}
 .btn{height:2.5rem;padding:0 0.75rem;border-radius:var(--radius);border:0.0625rem solid #bbb;background:#fff;cursor:pointer;font-size:0.95rem}
-.btn-primary{ /* Variant A visuals + copy from C */
+.btn-primary{
   background: linear-gradient(180deg,#2ecc71,#28b463);
   color:#fff;
   border:0;
@@ -190,7 +184,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
   </div>
 
   <script>
-    // Formatting helpers
+    // Helpers for formatting
     function formatTime12(date) {
       const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
       return timeStr.replace(/\s?([AP]M)$/, m => {
@@ -198,11 +192,9 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         return ' ' + s.replace('am','a.m.').replace('pm','p.m.');
       });
     }
-
     function formatDay(date) {
       return date.toLocaleDateString(undefined, { weekday: 'long' });
     }
-
     function timeOfDayLabel(hourIso) {
       const h = new Date(hourIso).getHours();
       if (h >= 6 && h < 12) return 'morning';
@@ -211,7 +203,15 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       return 'night';
     }
 
-    // Decision rule
+    // Severity emoji and accessible label mapping (single source)
+    function severityEmoji(severity) {
+      // Use distinct emoji for each severity and one-word aria-labels
+      if (severity === 'good') return { emoji: '👍', aria: 'good' };
+      if (severity === 'fair') return { emoji: '🆗', aria: 'fair' }; // changed to 🆗 for fair
+      return { emoji: '👎', aria: 'bad' };
+    }
+
+    // Decision rule for a single hour
     function isGoodHour(rainMm, showersMm, snowfallMm, windMs, rhPct) {
       const totalPrecip = (rainMm || 0) + (showersMm || 0) + (snowfallMm || 0);
       return totalPrecip < 0.2 && (windMs || 0) < 6 && (rhPct || 0) < 70;
@@ -224,15 +224,12 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       if (!r.ok) throw new Error('Geocoding failed');
       return r.json();
     }
-
     async function fetchForecast(lat, lon) {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=rain,showers,snowfall,windspeed_10m,relativehumidity_2m&forecast_days=7&timezone=auto`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('Weather fetch failed');
       return r.json();
     }
-
-    // Reverse geocode: lat,lon -> friendly place label using Nominatim (OpenStreetMap)
     async function reverseGeocode(lat, lon) {
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&format=json`;
@@ -248,7 +245,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           if (json.display_name) return json.display_name.split(',').slice(0, 2).join(',').trim();
         }
       } catch (e) {
-        // silent fallback handled by caller
+        // silent fallback
       }
       return null;
     }
@@ -326,7 +323,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       return `${formatTime12(start)} – ${formatTime12(end)}`;
     }
 
-    // Weekly summary helper
+    // Weekly summary helper (returns human-friendly strings)
     function findGoodPeriods7Days(times, goodFlags) {
       const windows = [];
       let i = 0;
@@ -363,8 +360,8 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       });
     }
 
-    // Render weekly list as bold bullet points
-    function renderWeeklyList(locationLabel, times, goodFlags) {
+    // Render weekly list as bold bullet points (include emoji for clarity)
+    function renderWeeklyList(locationLabel, times, goodFlags, hourlySeverities) {
       const weeklySection = document.getElementById('weeklySummary');
       const locationName = document.getElementById('locationName');
       const listEl = document.getElementById('weeklyList');
@@ -378,14 +375,23 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       } else {
         periods.forEach(p => {
           const li = document.createElement('li');
-          li.innerHTML = `<strong>${p}</strong>`;
+          // Determine a representative severity for the period (prefer good, then fair, else bad)
+          const repSeverity = (() => {
+            // find any 'good' in the week; else any 'fair'; else 'bad'
+            if (hourlySeverities && hourlySeverities.some(s => s === 'good')) return 'good';
+            if (hourlySeverities && hourlySeverities.some(s => s === 'fair')) return 'fair';
+            return 'bad';
+          })();
+          const em = severityEmoji(repSeverity);
+          li.innerHTML = `<strong><span aria-hidden="true">${em.emoji}</span> ${p}</strong>`;
+          li.setAttribute('aria-label', `${em.aria} ${p}`);
           listEl.appendChild(li);
         });
       }
       weeklySection.hidden = false;
     }
 
-    // Render day summaries (uses richer verdict object)
+    // Render day summaries and hourly details (consistent, distinct visuals)
     function renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags) {
       const container = document.getElementById('periodSummaries');
       container.innerHTML = '';
@@ -399,6 +405,10 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       }
       const todayIso = new Date().toISOString().slice(0,10);
       const tomorrowIso = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+
+      // Build an array of hourly severities for weekly summary heuristics
+      const hourlySeverities = [];
+
       Object.keys(days).forEach(dayKey => {
         const indices = days[dayKey];
         const dayName = formatDay(new Date(times[indices[0]]));
@@ -413,6 +423,23 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         const maxWind = dayInfo.maxWind;
         const avgRh = dayInfo.avgRh;
         const severity = dayInfo.severity;
+        const em = severityEmoji(severity);
+
+        // Collect hourly severities for weekly heuristics
+        indices.forEach(i => {
+          // compute hour severity same way as below
+          const totalPrecipHour =
+            ((rain && rain[i]) || 0) +
+            ((showers && showers[i]) || 0) +
+            ((snowfall && snowfall[i]) || 0);
+          const w = (wind && wind[i]) || 0;
+          let hourSeverity;
+          if (goodFlags[i]) hourSeverity = 'good';
+          else if (totalPrecipHour >= 0.2) hourSeverity = 'bad';
+          else if (w >= 6) hourSeverity = 'fair';
+          else hourSeverity = 'bad';
+          hourlySeverities.push(hourSeverity);
+        });
 
         let verdictText;
         if (severity === 'good') {
@@ -428,7 +455,15 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 
         const h2 = document.createElement('h2');
         h2.className = 'verdict';
-        h2.textContent = `${labelPrefix} ${verdictText}`;
+        // Prepend emoji to the heading for visual consistency; emoji is decorative but provide aria-label on a hidden span
+        const emojiSpan = document.createElement('span');
+        emojiSpan.setAttribute('aria-hidden', 'true');
+        emojiSpan.textContent = em.emoji + ' ';
+        h2.appendChild(emojiSpan);
+        const textNode = document.createTextNode(`${labelPrefix} ${verdictText}`);
+        h2.appendChild(textNode);
+        // Provide an accessible label for the heading combining severity and text
+        h2.setAttribute('aria-label', `${em.aria} ${labelPrefix} ${verdictText}`);
         card.appendChild(h2);
 
         const ul = document.createElement('ul');
@@ -466,7 +501,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         list.className = 'meta';
         const dl = document.createElement('dl');
 
-        // Build hourly rows: time (dt) + coloured dd starting with emoji and factors
+        // Hourly rows: time (dt) + coloured dd starting with emoji and factors
         indices.forEach(i => {
           const d = new Date(times[i]);
           const totalPrecipHour =
@@ -494,19 +529,19 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           const dd = document.createElement('dd');
           dd.className = 'hour ' + hourSeverity;
 
-          // Emoji: provide a one-word aria-label for screen readers
+          // Emoji: one-word aria-labels ("good", "fair", "bad")
+          const sev = severityEmoji(hourSeverity);
           const emoji = document.createElement('span');
           emoji.className = 'hour-emoji';
-          emoji.setAttribute('tabindex', '0'); // keyboard-focusable
+          emoji.setAttribute('tabindex', '0');
           emoji.setAttribute('role', 'img');
-          // one-word aria-label as requested: "good" or "poor"
-          emoji.setAttribute('aria-label', goodFlags[i] ? 'good' : 'poor');
-          emoji.textContent = goodFlags[i] ? '👍' : '👎';
+          emoji.setAttribute('aria-label', sev.aria);
+          emoji.textContent = sev.emoji;
 
-          // Factors in parentheses; replace "relative humidity" with 🥵
+          // Factors in parentheses; relative humidity shown as 🥵
           const factors = document.createElement('span');
           factors.className = 'hour-factors';
-          factors.textContent = ` (☔ ${totalPrecipHour.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 🥵 ${h}%)`;
+          factors.textContent = ` (${String.fromCodePoint(0x2614)} ${totalPrecipHour.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 🥵 ${h}%)`;
 
           dd.appendChild(emoji);
           dd.appendChild(factors);
@@ -519,6 +554,22 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
         details.appendChild(list);
         card.appendChild(details);
       });
+
+      // After building days, update weekly summary with a representative severity array
+      const weeklySection = document.getElementById('weeklySummary');
+      if (!weeklySection.hidden) {
+        // collect hourly severities from the page (quick heuristic)
+        const allHourly = Array.from(document.querySelectorAll('.meta dd.hour'));
+        const severities = allHourly.map(el => {
+          if (el.classList.contains('good')) return 'good';
+          if (el.classList.contains('fair')) return 'fair';
+          return 'bad';
+        });
+        // Re-render weekly list with representative severities
+        const timesArr = times;
+        const goodFlagsArr = goodFlags;
+        renderWeeklyList(document.getElementById('locationName').textContent, timesArr, goodFlagsArr, severities);
+      }
     }
 
     // Main evaluation
@@ -530,14 +581,14 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
       const wind = data.hourly.windspeed_10m || [];
       const rh = data.hourly.relativehumidity_2m || [];
       const goodFlags = times.map((t, i) => isGoodHour(rain[i], showers[i], snowfall[i], wind[i], rh[i]));
-      renderWeeklyList(locationLabel, times, goodFlags);
+      // show weekly summary and day/hour details
+      renderWeeklyList(locationLabel, times, goodFlags, null);
       renderDaySummaries(times, rain, showers, snowfall, wind, rh, goodFlags);
     }
 
-    // Defer DOM wiring until load and guard with try/catch
+    // DOM wiring deferred until load; defensive try/catch
     window.addEventListener('load', () => {
       try {
-        // UI wiring (now safely after DOM is ready)
         const placeInput = document.getElementById('place');
         const suggestionsEl = document.getElementById('suggestions');
         const useLocBtn = document.getElementById('useLoc');
@@ -574,13 +625,10 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
 
         placeInput.addEventListener('input', () => {
           const hasText = placeInput.value.trim().length > 0;
-          if (hasText) {
-            useLocBtn.setAttribute('aria-pressed', 'false');
-          }
+          if (hasText) useLocBtn.setAttribute('aria-pressed', 'false');
           doSuggest();
         });
 
-        // Use my location: reverse-geocode to a friendly place name and render
         useLocBtn.addEventListener('click', () => {
           if (!navigator.geolocation) {
             alert('Geolocation is not supported by your browser.');
@@ -607,7 +655,7 @@ summary{cursor:pointer;font-weight:400;font-size:0.95rem;color:var(--muted)}
           }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 });
         });
 
-        // On load: hide weekly summary until a location is chosen
+        // initial state
         placeInput.value = '';
         suggestionsEl.innerHTML = '';
         document.getElementById('weeklySummary').hidden = true;
