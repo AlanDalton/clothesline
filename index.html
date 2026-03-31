@@ -234,10 +234,10 @@ function renderDaySummaries(times,rain,showers,snow,wind,rh,goodFlags){
   const container=document.getElementById('periodSummaries');
   container.innerHTML='';
   const maxHours=Math.min(times.length,7*24);
-  const days={};
-  for(let i=0;i<maxHours;i++){
-    const d=new Date(times[i]).toISOString().slice(0,10);
-    if(!days[d]) days[d]=[];
+  const days = {};
+  for (let i = 0; i < maxHours; i++) {
+    const d = times[i].slice(0,10); // use local date directly
+    if (!days[d]) days[d] = [];
     days[d].push(i);
   }
   const today=new Date().toISOString().slice(0,10);
