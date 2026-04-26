@@ -130,279 +130,433 @@ input[type="text"]{
 </div>
 <script>
 function formatTime12(date){
-  const t=date.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
-  return t.replace(/\s?(AM|PM)$/i,m=>' '+m.toLowerCase().replace('am','a.m.').replace('pm','p.m.'));
+  const t = date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+  return t.replace(/\s?(AM|PM)$/i, m =>
+    ' ' + m.toLowerCase().replace('am','a.m.').replace('pm','p.m.')
+  );
 }
+
 function formatDay(date){
-  return date.toLocaleDateString(undefined,{weekday:'long'});
+  return date.toLocaleDateString(undefined, { weekday: 'long' });
 }
+
 function severityEmoji(sev){
-  if(sev==='good') return {emoji:'👍',aria:'good'};
-  if(sev==='fair') return {emoji:'🆗',aria:'fair'};
-  return {emoji:'👎',aria:'bad'};
+  if (sev === 'good') return { emoji: '👍', aria: 'good' };
+  if (sev === 'fair') return { emoji: '🆗', aria: 'fair' };
+  return { emoji: '👎', aria: 'bad' };
 }
-function isGoodHour(rain,showers,snow,wind,rh){
-  const precip=(rain||0)+(showers||0)+(snow||0);
-  return precip<0.2 && (wind||0)<6 && (rh||0)<70;
+
+/* ---------------------------------------------------------
+   REALISTIC IRISH DRYING LOGIC
+   --------------------------------------------------------- */
+function isGoodHour(rain, showers, snow, wind, rh){
+  const precip = (rain || 0) + (showers || 0) + (snow || 0);
+  return precip < 0.3 && wind < 12 && rh < 85;
 }
+
+/* ---------------------------------------------------------
+   API HELPERS
+   --------------------------------------------------------- */
 async function geocode(q){
-  const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=en&format=json');
-  if(!r.ok) throw new Error('Geocoding failed');
+  const r = await fetch(
+    'https://geocoding-api.open-meteo.com/v1/search?name=' +
+    encodeURIComponent(q) +
+    '&count=6&language=en&format=json'
+  );
+  if (!r.ok) throw new Error('Geocoding failed');
   return r.json();
 }
-async function fetchForecast(lat,lon){
-  const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=rain,showers,snowfall,windspeed_10m,relativehumidity_2m&forecast_days=7&timezone=auto`);
-  if(!r.ok) throw new Error('Weather fetch failed');
+
+async function fetchForecast(lat, lon){
+  const r = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=rain,showers,snowfall,windspeed_10m,relativehumidity_2m` +
+    `&forecast_days=7&timezone=auto`
+  );
+  if (!r.ok) throw new Error('Weather fetch failed');
   return r.json();
 }
-async function reverseGeocode(lat,lon){
+
+async function reverseGeocode(lat, lon){
   try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,{headers:{'Accept-Language':'en'}});
-    if(!r.ok) return null;
-    const j=await r.json();
-    if(j.address){
-      const a=j.address;
-      const city=a.city||a.town||a.village||a.hamlet||a.county;
-      const country=a.country;
-      if(city&&country) return `${city}, ${country}`;
-      if(city) return city;
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j.address){
+      const a = j.address;
+      const city = a.city || a.town || a.village || a.hamlet || a.county;
+      const country = a.country;
+      if (city && country) return `${city}, ${country}`;
+      if (city) return city;
     }
-  }catch(e){}
+  } catch(e){}
   return null;
 }
-function dayVerdictForDate(dateIso,times,rain,showers,snow,wind,rh,goodFlags){
-  const start=dateIso+'T06:00';
-  const end=dateIso+'T20:00';
-  let goodHours=0,totalPrecip=0,maxWind=0,sumRh=0,countRh=0;
-  for(let i=0;i<times.length;i++){
-    if(times[i]>=start && times[i]<end){
-      const r=(rain[i]||0)+(showers[i]||0)+(snow[i]||0);
-      const w=wind[i]||0;
-      const h=rh[i]||0;
-      totalPrecip+=r;
-      if(w>maxWind) maxWind=w;
-      sumRh+=h;countRh++;
-      if(goodFlags[i]) goodHours++;
+
+/* ---------------------------------------------------------
+   DAILY VERDICT
+   --------------------------------------------------------- */
+function dayVerdictForDate(dateIso, times, rain, showers, snow, wind, rh, goodFlags){
+  const start = dateIso + 'T06:00';
+  const end   = dateIso + 'T20:00';
+
+  let goodHours = 0;
+  let totalPrecip = 0;
+  let maxWind = 0;
+  let sumRh = 0;
+  let countRh = 0;
+
+  for (let i = 0; i < times.length; i++){
+    if (times[i] >= start && times[i] < end){
+      const r = (rain[i] || 0) + (showers[i] || 0) + (snow[i] || 0);
+      const w = wind[i] || 0;
+      const h = rh[i] || 0;
+
+      totalPrecip += r;
+      if (w > maxWind) maxWind = w;
+      sumRh += h;
+      countRh++;
+
+      if (goodFlags[i]) goodHours++;
     }
   }
-  const avgRh=countRh?Math.round(sumRh/countRh):0;
+
+  const avgRh = countRh ? Math.round(sumRh / countRh) : 0;
+
+  /* Updated verdict logic */
   let severity;
-  if(goodHours>=4) severity='good';
-  else if(totalPrecip>=0.2) severity='bad';
-  else if(maxWind>=6) severity='fair';
-  else severity='bad';
-  return {severity,totalPrecip,maxWind,avgRh};
+  if (goodHours >= 4) severity = 'good';
+  else if (totalPrecip >= 0.3) severity = 'bad';
+  else if (maxWind >= 12) severity = 'fair';
+  else severity = 'fair';
+
+  return { severity, totalPrecip, maxWind, avgRh };
 }
-function findBestWindow(indices,times,goodFlags){
-  const runs=[];let start=null;
-  for(let j=0;j<indices.length;j++){
-    const i=indices[j];
-    if(goodFlags[i]){
-      if(start===null) start=i;
-    }else{
-      if(start!==null){runs.push({start,end:indices[j-1]});start=null;}
+
+/* ---------------------------------------------------------
+   BEST WINDOW
+   --------------------------------------------------------- */
+function findBestWindow(indices, times, goodFlags){
+  const runs = [];
+  let start = null;
+
+  for (let j = 0; j < indices.length; j++){
+    const i = indices[j];
+    if (goodFlags[i]){
+      if (start === null) start = i;
+    } else {
+      if (start !== null){
+        runs.push({ start, end: indices[j - 1] });
+        start = null;
+      }
     }
   }
-  if(start!==null) runs.push({start,end:indices[indices.length-1]});
-  if(!runs.length) return 'No good window';
-  runs.sort((a,b)=>(b.end-b.start)-(a.end-a.start));
-  const best=runs[0];
+  if (start !== null){
+    runs.push({ start, end: indices[indices.length - 1] });
+  }
+
+  if (!runs.length) return 'No good window';
+
+  runs.sort((a, b) => (b.end - b.start) - (a.end - a.start));
+  const best = runs[0];
+
   return `${formatTime12(new Date(times[best.start]))} – ${formatTime12(new Date(times[best.end]))}`;
 }
-function findGoodPeriods7Days(times,goodFlags){
-  const windows=[];let i=0;
-  while(i<times.length){
-    if(!goodFlags[i]){i++;continue;}
-    let s=i,e=i;
-    while(e+1<times.length && goodFlags[e+1]) e++;
-    windows.push({s,e});i=e+1;
+
+/* ---------------------------------------------------------
+   WEEKLY PERIODS
+   --------------------------------------------------------- */
+function findGoodPeriods7Days(times, goodFlags){
+  const windows = [];
+  let i = 0;
+
+  while (i < times.length){
+    if (!goodFlags[i]){ i++; continue; }
+    let s = i, e = i;
+    while (e + 1 < times.length && goodFlags[e + 1]) e++;
+    windows.push({ s, e });
+    i = e + 1;
   }
-  return windows.map(w=>{
-    const sd=formatDay(new Date(times[w.s]));
-    const ed=formatDay(new Date(times[w.e]));
-    const st=new Date(times[w.s]);
-    const et=new Date(times[w.e]);
-    if(sd===ed) return `${sd} ${formatTime12(st)}–${formatTime12(et)}`;
+
+  return windows.map(w => {
+    const sd = formatDay(new Date(times[w.s]));
+    const ed = formatDay(new Date(times[w.e]));
+    const st = new Date(times[w.s]);
+    const et = new Date(times[w.e]);
+    if (sd === ed) return `${sd} ${formatTime12(st)}–${formatTime12(et)}`;
     return `from ${sd} ${formatTime12(st)} until ${ed} ${formatTime12(et)}`;
   });
 }
-function renderWeeklyList(label,times,goodFlags){
-  const sec=document.getElementById('weeklySummary');
-  const name=document.getElementById('locationName');
-  const list=document.getElementById('weeklyList');
-  name.textContent=label;
-  list.innerHTML='';
-  const periods=findGoodPeriods7Days(times,goodFlags);
-  if(!periods.length){
-    list.innerHTML='<li><strong>No reliably dry windows are forecast this week.</strong></li>';
-  }else{
-    periods.forEach(p=>{
-      const li=document.createElement('li');
-      li.innerHTML=`<strong>${p}</strong>`;
+
+/* ---------------------------------------------------------
+   RENDER WEEKLY SUMMARY
+   --------------------------------------------------------- */
+function renderWeeklyList(label, times, goodFlags){
+  const sec  = document.getElementById('weeklySummary');
+  const name = document.getElementById('locationName');
+  const list = document.getElementById('weeklyList');
+
+  name.textContent = label;
+  list.innerHTML = '';
+
+  const periods = findGoodPeriods7Days(times, goodFlags);
+
+  if (!periods.length){
+    list.innerHTML = '<li><strong>No reliably dry windows are forecast this week.</strong></li>';
+  } else {
+    periods.forEach(p => {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${p}</strong>`;
       list.appendChild(li);
     });
   }
-  sec.hidden=false;
+
+  sec.hidden = false;
 }
-function renderDaySummaries(times,rain,showers,snow,wind,rh,goodFlags){
-  const container=document.getElementById('periodSummaries');
-  container.innerHTML='';
-  const maxHours=Math.min(times.length,7*24);
+
+/* ---------------------------------------------------------
+   RENDER DAILY SUMMARIES
+   --------------------------------------------------------- */
+function renderDaySummaries(times, rain, showers, snow, wind, rh, goodFlags){
+  const container = document.getElementById('periodSummaries');
+  container.innerHTML = '';
+
+  const maxHours = Math.min(times.length, 7 * 24);
   const days = {};
-  for (let i = 0; i < maxHours; i++) {
-    const d = times[i].slice(0,10); // use local date directly
+
+  for (let i = 0; i < maxHours; i++){
+    const d = times[i].slice(0, 10);   // local date, no UTC shift
     if (!days[d]) days[d] = [];
     days[d].push(i);
   }
-  const today=new Date().toISOString().slice(0,10);
-  const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
-  Object.keys(days).forEach(dayKey=>{
-    const idx=days[dayKey];
-    const dayName=formatDay(new Date(times[idx[0]]));
-    const prefix=dayKey===today?'Today is':dayKey===tomorrow?'Tomorrow is':`${dayName} is`;
-    const info=dayVerdictForDate(dayKey,times,rain,showers,snow,wind,rh,goodFlags);
-    const sev=info.severity;
-    const em=severityEmoji(sev);
-    const card=document.createElement('div');
-    card.className='card '+sev;
-    const h2=document.createElement('h2');
-    h2.className='verdict';
-    h2.innerHTML=`<span aria-hidden="true">${em.emoji} </span>${prefix} ${sev} for hanging out clothes.`;
-    h2.setAttribute('aria-label',`${em.aria} ${prefix} ${sev} for hanging out clothes.`);
+
+  const today    = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+  Object.keys(days).forEach(dayKey => {
+    const idx = days[dayKey];
+    const dayName = formatDay(new Date(times[idx[0]]));
+
+    const prefix =
+      dayKey === today    ? 'Today is' :
+      dayKey === tomorrow ? 'Tomorrow is' :
+      `${dayName} is`;
+
+    const info = dayVerdictForDate(dayKey, times, rain, showers, snow, wind, rh, goodFlags);
+    const sev  = info.severity;
+    const em   = severityEmoji(sev);
+
+    const card = document.createElement('div');
+    card.className = 'card ' + sev;
+
+    const h2 = document.createElement('h2');
+    h2.className = 'verdict';
+    h2.innerHTML =
+      `<span aria-hidden="true">${em.emoji} </span>${prefix} ${sev} for hanging out clothes.`;
+    h2.setAttribute('aria-label', `${em.aria} ${prefix} ${sev} for hanging out clothes.`);
     card.appendChild(h2);
-    const ul=document.createElement('ul');
-    ul.innerHTML=`
+
+    const ul = document.createElement('ul');
+    ul.innerHTML = `
       <li>☔️ Total precipitation: ${info.totalPrecip.toFixed(1)} mm</li>
       <li>💨 Wind: ${info.maxWind.toFixed(1)} m/s</li>
       <li>💧 Relative humidity: ${info.avgRh}%</li>
     `;
-    const li4=document.createElement('li');
-    if(sev==='good'){
-      li4.textContent=`👍 Best window: ${findBestWindow(idx,times,goodFlags)}`;
-    }else if(info.totalPrecip>=0.2){
-      li4.textContent='⚠️ Rain likely — outdoor drying unreliable';
-    }else if(info.maxWind>=6){
-      li4.textContent='⚠️ Strong wind — secure lighter items';
-    }else{
-      li4.textContent='⚠️ High humidity may slow drying';
+
+    const li4 = document.createElement('li');
+    if (sev === 'good'){
+      li4.textContent = `👍 Best window: ${findBestWindow(idx, times, goodFlags)}`;
+    } else if (info.totalPrecip >= 0.3){
+      li4.textContent = '⚠️ Rain likely — outdoor drying unreliable';
+    } else if (info.maxWind >= 12){
+      li4.textContent = '⚠️ Strong wind — secure lighter items';
+    } else {
+      li4.textContent = '⚠️ Conditions mixed — drying may be slower';
     }
     ul.appendChild(li4);
     card.appendChild(ul);
-    const details=document.createElement('details');
-    const summary=document.createElement('summary');
-    summary.textContent=`Show hourly details for ${dayName}`;
+
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = `Show hourly details for ${dayName}`;
     details.appendChild(summary);
-    const meta=document.createElement('div');
-    meta.className='meta';
-    const dl=document.createElement('dl');
-    idx.forEach(i=>{
-      const d=new Date(times[i]);
-      const precip=(rain[i]||0)+(showers[i]||0)+(snow[i]||0);
-      const w=wind[i]||0;
-      const h=rh[i]||0;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+
+    const dl = document.createElement('dl');
+
+    idx.forEach(i => {
+      const d = new Date(times[i]);
+      const precip = (rain[i] || 0) + (showers[i] || 0) + (snow[i] || 0);
+      const w = wind[i] || 0;
+      const h = rh[i] || 0;
+
       let hourSev;
-      if(goodFlags[i]) hourSev='good';
-      else if(precip>=0.2) hourSev='bad';
-      else if(w>=6) hourSev='fair';
-      else hourSev='bad';
-      const sevObj=severityEmoji(hourSev);
-      const dt=document.createElement('dt');
-      dt.textContent=formatTime12(d);
-      const dd=document.createElement('dd');
-      dd.className='hour '+hourSev;
-      const emoji=document.createElement('span');
-      emoji.className='hour-emoji';
-      emoji.setAttribute('role','img');
-      emoji.setAttribute('aria-label',sevObj.aria);
-      emoji.textContent=sevObj.emoji;
-      const factors=document.createElement('span');
-      factors.className='hour-factors';
-      factors.textContent=` (☔ ${precip.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 💧 ${h}%)`;
+      if (goodFlags[i]) hourSev = 'good';
+      else if (precip >= 0.3) hourSev = 'bad';
+      else if (w >= 12) hourSev = 'fair';
+      else hourSev = 'fair';
+
+      const sevObj = severityEmoji(hourSev);
+
+      const dt = document.createElement('dt');
+      dt.textContent = formatTime12(d);
+
+      const dd = document.createElement('dd');
+      dd.className = 'hour ' + hourSev;
+
+      const emoji = document.createElement('span');
+      emoji.className = 'hour-emoji';
+      emoji.setAttribute('role', 'img');
+      emoji.setAttribute('aria-label', sevObj.aria);
+      emoji.textContent = sevObj.emoji;
+
+      const factors = document.createElement('span');
+      factors.className = 'hour-factors';
+      factors.textContent =
+        ` (☔ ${precip.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 💧 ${h}%)`;
+
       dd.appendChild(emoji);
       dd.appendChild(factors);
+
       dl.appendChild(dt);
       dl.appendChild(dd);
     });
+
     meta.appendChild(dl);
     details.appendChild(meta);
     card.appendChild(details);
+
     container.appendChild(card);
   });
 }
-function evaluateForecastAndRender(data,label){
-  const t=data.hourly.time;
-  const rain=data.hourly.rain||[];
-  const showers=data.hourly.showers||[];
-  const snow=data.hourly.snowfall||[];
-  const wind=data.hourly.windspeed_10m||[];
-  const rh=data.hourly.relativehumidity_2m||[];
-  const goodFlags=t.map((_,i)=>isGoodHour(rain[i],showers[i],snow[i],wind[i],rh[i]));
-  renderWeeklyList(label,t,goodFlags);
-  renderDaySummaries(t,rain,showers,snow,wind,rh,goodFlags);
+
+/* ---------------------------------------------------------
+   MAIN EVALUATION
+   --------------------------------------------------------- */
+function evaluateForecastAndRender(data, label){
+  const t     = data.hourly.time;
+  const rain  = data.hourly.rain || [];
+  const sh    = data.hourly.showers || [];
+  const snow  = data.hourly.snowfall || [];
+  const wind  = data.hourly.windspeed_10m || [];
+  const rh    = data.hourly.relativehumidity_2m || [];
+
+  const goodFlags = t.map((_, i) =>
+    isGoodHour(rain[i], sh[i], snow[i], wind[i], rh[i])
+  );
+
+  renderWeeklyList(label, t, goodFlags);
+  renderDaySummaries(t, rain, sh, snow, wind, rh, goodFlags);
 }
-window.addEventListener('load',()=>{
-  const place=document.getElementById('place');
-  const sugg=document.getElementById('suggestions');
-  const btn=document.getElementById('useLoc');
-  function debounce(fn,ms=300){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
-  const doSuggest=debounce(async()=>{
-    const q=place.value.trim();
-    sugg.innerHTML='';
-    if(!q) return;
+
+/* ---------------------------------------------------------
+   UI WIRING
+   --------------------------------------------------------- */
+window.addEventListener('load', () => {
+  const place = document.getElementById('place');
+  const sugg  = document.getElementById('suggestions');
+  const btn   = document.getElementById('useLoc');
+
+  function debounce(fn, ms = 300){
+    let t;
+    return (...a) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...a), ms);
+    };
+  }
+
+  const doSuggest = debounce(async () => {
+    const q = place.value.trim();
+    sugg.innerHTML = '';
+    if (!q) return;
+
     try{
-      const geo=await geocode(q);
-      if(!geo.results?.length){sugg.textContent='No matches';return;}
-      geo.results.forEach(r=>{
-        const div=document.createElement('div');
-        const label=r.name+(r.admin1?', '+r.admin1:'')+(r.country?', '+r.country:'');
-        div.textContent=label;
-        div.style.padding='0.4rem';
-        div.style.cursor='pointer';
-        div.onclick=()=>{
-          place.value=label;
-          sugg.innerHTML='';
-          fetchForecast(r.latitude,r.longitude)
-            .then(data=>evaluateForecastAndRender(data,label))
-            .catch(e=>alert(e.message));
+      const geo = await geocode(q);
+      if (!geo.results?.length){
+        sugg.textContent = 'No matches';
+        return;
+      }
+
+      geo.results.forEach(r => {
+        const div = document.createElement('div');
+        const label =
+          r.name +
+          (r.admin1 ? ', ' + r.admin1 : '') +
+          (r.country ? ', ' + r.country : '');
+
+        div.textContent = label;
+        div.style.padding = '0.4rem';
+        div.style.cursor = 'pointer';
+
+        div.onclick = () => {
+          place.value = label;
+          sugg.innerHTML = '';
+          fetchForecast(r.latitude, r.longitude)
+            .then(data => evaluateForecastAndRender(data, label))
+            .catch(e => alert(e.message));
         };
+
         sugg.appendChild(div);
       });
-    }catch(e){
-      sugg.textContent='Lookup error';
+
+    } catch(e){
+      sugg.textContent = 'Lookup error';
     }
-  },300);
-  place.addEventListener('input',()=>{
-    if(place.value.trim().length>0){
-      btn.setAttribute('aria-pressed','false');
+  }, 300);
+
+  place.addEventListener('input', () => {
+    if (place.value.trim().length > 0){
+      btn.setAttribute('aria-pressed', 'false');
     }
     doSuggest();
   });
-  btn.addEventListener('click',()=>{
-    if(!navigator.geolocation){
+
+  btn.addEventListener('click', () => {
+    if (!navigator.geolocation){
       alert('Geolocation is not supported by your browser.');
       return;
     }
-    btn.setAttribute('aria-pressed','true');
-    place.value='';
-    sugg.innerHTML='';
-    navigator.geolocation.getCurrentPosition(async p=>{
-      const lat=p.coords.latitude;
-      const lon=p.coords.longitude;
+
+    btn.setAttribute('aria-pressed', 'true');
+    place.value = '';
+    sugg.innerHTML = '';
+
+    navigator.geolocation.getCurrentPosition(async p => {
+      const lat = p.coords.latitude;
+      const lon = p.coords.longitude;
+
       try{
-        const [data,label]=await Promise.all([
-          fetchForecast(lat,lon),
-          reverseGeocode(lat,lon)
+        const [data, label] = await Promise.all([
+          fetchForecast(lat, lon),
+          reverseGeocode(lat, lon)
         ]);
-        evaluateForecastAndRender(data,label||`Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`);
-      }catch(err){
-        alert('Unable to fetch weather or location name. '+(err?.message||''));}
-    },()=>{
+
+        evaluateForecastAndRender(
+          data,
+          label || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`
+        );
+
+      } catch(err){
+        alert('Unable to fetch weather or location name. ' + (err?.message || ''));
+      }
+
+    }, () => {
       alert('Location denied or unavailable');
     });
   });
-  document.getElementById('weeklySummary').hidden=true;
-  document.getElementById('locationName').textContent='—';
-  btn.setAttribute('aria-pressed','false');
+
+  document.getElementById('weeklySummary').hidden = true;
+  document.getElementById('locationName').textContent = '—';
+  btn.setAttribute('aria-pressed', 'false');
 });
 </script>
 </body>
