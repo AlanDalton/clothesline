@@ -303,7 +303,17 @@ async function reverseGeocode(lat, lon){
    DAILY VERDICT
    --------------------------------------------------------- */
 function dayVerdictForDate(dateIso, times, rain, showers, snow, wind, rh, goodFlags){
-  const start = dateIso + 'T06:00';
+  // If evaluating today, ignore past hours
+  let start;
+  const nowIso = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+
+  if (dateIso === new Date().toISOString().slice(0, 10)) {
+    // Today → start from current time
+    start = nowIso;
+  } else {
+    // Other days → normal 06:00 start
+    start = dateIso + 'T06:00';
+  }
   const end   = dateIso + 'T20:00';
 
   let goodHours = 0;
