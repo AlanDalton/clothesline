@@ -694,44 +694,52 @@ window.addEventListener('load', () => {
     doSuggest();
   });
 
-  btn.addEventListener('click', () => {
-    if (!navigator.geolocation){
-      alert('Geolocation is not supported by your browser.');
-      return;
-    }
+btn.addEventListener('click', () => {
+  if (!navigator.geolocation){
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
 
-    btn.setAttribute('aria-pressed', 'true');
-    place.value = '';
-    sugg.innerHTML = '';
+  btn.setAttribute('aria-pressed', 'true');
+  place.value = '';
+  sugg.innerHTML = '';
 
-    navigator.geolocation.getCurrentPosition(async p => {
+  navigator.geolocation.getCurrentPosition(
+    p => {
       const lat = p.coords.latitude;
       const lon = p.coords.longitude;
 
-      try{
-        const [data, label] = await Promise.all([
-          fetchForecast(lat, lon),
-          reverseGeocode(lat, lon)
-        ]);
+      (async () => {
+        try{
+          const [data, label] = await Promise.all([
+            fetchForecast(lat, lon),
+            reverseGeocode(lat, lon)
+          ]);
 
-        evaluateForecastAndRender(
-          data,
-          label || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`
-        );
+          evaluateForecastAndRender(
+            data,
+            label || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`
+          );
 
-      } catch(err){
-        alert('Unable to fetch weather or location name. ' + (err?.message || ''));
-      }
+        } catch(err){
+          alert('Unable to fetch weather or location name. ' + (err?.message || ''));
+        }
+      })();
+    },
 
-    }, () => {
+    () => {
       alert('Location denied or unavailable');
-    });
-  });
+    },
 
-  document.getElementById('weeklySummary').hidden = true;
-  document.getElementById('locationName').textContent = '—';
-  btn.setAttribute('aria-pressed', 'false');
+    { enableHighAccuracy: true }
+  );
 });
+
+// These lines belong OUTSIDE the click handler
+document.getElementById('weeklySummary').hidden = true;
+document.getElementById('locationName').textContent = '—';
+btn.setAttribute('aria-pressed', 'false');
+
 </script>
 </body>
 </html>
