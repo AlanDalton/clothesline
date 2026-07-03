@@ -354,25 +354,60 @@ function dayVerdictForDate(dateIso, times, rain, showers, snow, wind, rh, goodFl
    --------------------------------------------------------- */
 function findBestWindow(indices, times, goodFlags){
   const runs = [];
+  const nowIso = new Date().toISOString().slice(0, 16);   // YYYY-MM-DDTHH:MM
+  const todayIso = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
   let start = null;
 
   for (let j = 0; j < indices.length; j++){
     const i = indices[j];
+
     if (goodFlags[i]){
       if (start === null) start = i;
     } else {
       if (start !== null){
-        runs.push({ start, end: indices[j - 1] });
+        let s = start;
+        let e = indices[j - 1];
+
+        // If this run is today, trim away past hours
+        const runDate = times[s].slice(0, 10);
+        if (runDate === todayIso){
+          while (s <= e && times[s] < nowIso){
+            s++;
+          }
+          if (s <= e){
+            runs.push({ start: s, end: e });
+          }
+        } else {
+          runs.push({ start: s, end: e });
+        }
+
         start = null;
       }
     }
   }
+
+  // Handle final run at end of list
   if (start !== null){
-    runs.push({ start, end: indices[indices.length - 1] });
+    let s = start;
+    let e = indices[indices.length - 1];
+
+    const runDate = times[s].slice(0, 10);
+    if (runDate === todayIso){
+      while (s <= e && times[s] < nowIso){
+        s++;
+      }
+      if (s <= e){
+        runs.push({ start: s, end: e });
+      }
+    } else {
+      runs.push({ start: s, end: e });
+    }
   }
 
   if (!runs.length) return 'No good window';
 
+  // Pick longest run
   runs.sort((a, b) => (b.end - b.start) - (a.end - a.start));
   const best = runs[0];
 
