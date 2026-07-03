@@ -384,22 +384,52 @@ function findBestWindow(indices, times, goodFlags){
    --------------------------------------------------------- */
 function findGoodPeriods7Days(times, goodFlags){
   const windows = [];
+  const nowIso = new Date().toISOString().slice(0, 16);   // YYYY-MM-DDTHH:MM
+  const todayIso = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
   let i = 0;
 
   while (i < times.length){
-    if (!goodFlags[i]){ i++; continue; }
-    let s = i, e = i;
-    while (e + 1 < times.length && goodFlags[e + 1]) e++;
+    // Skip non-good hours
+    if (!goodFlags[i]) { i++; continue; }
+
+    let s = i;
+    let e = i;
+
+    // Extend run while hours remain good
+    while (e + 1 < times.length && goodFlags[e + 1]) {
+      e++;
+    }
+
+    // If this window is today, trim away past hours
+    const windowDate = times[s].slice(0, 10);
+    if (windowDate === todayIso) {
+      // Move start forward until it is >= now
+      while (s <= e && times[s] < nowIso) {
+        s++;
+      }
+      // If trimming removed the whole window, skip it
+      if (s > e) {
+        i = e + 1;
+        continue;
+      }
+    }
+
     windows.push({ s, e });
     i = e + 1;
   }
 
+  // Convert windows into readable strings
   return windows.map(w => {
     const sd = formatDay(new Date(times[w.s]));
     const ed = formatDay(new Date(times[w.e]));
     const st = new Date(times[w.s]);
     const et = new Date(times[w.e]);
-    if (sd === ed) return `${sd} ${formatTime12(st)}–${formatTime12(et)}`;
+
+    if (sd === ed) {
+      return `${sd} ${formatTime12(st)}–${formatTime12(et)}`;
+    }
+
     return `from ${sd} ${formatTime12(st)} until ${ed} ${formatTime12(et)}`;
   });
 }
