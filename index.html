@@ -568,43 +568,52 @@ function renderDaySummaries(times, rain, showers, snow, wind, rh, goodFlags){
 
     const dl = document.createElement('dl');
 
-    idx.forEach(i => {
-      const d = new Date(times[i]);
-      const precip = (rain[i] || 0) + (showers[i] || 0) + (snow[i] || 0);
-      const w = wind[i] || 0;
-      const h = rh[i] || 0;
+const nowIso = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+const todayIso = new Date().toISOString().slice(0, 10);
 
-      let hourSev;
-      if (goodFlags[i]) hourSev = 'good';
-      else if (precip >= 0.3) hourSev = 'bad';
-      else if (w >= 12) hourSev = 'fair';
-      else hourSev = 'fair';
+idx.forEach(i => {
+  const hourIso = times[i].slice(0, 16);
+  const hourDate = times[i].slice(0, 10);
 
-      const sevObj = severityEmoji(hourSev);
+  // Skip past hours for today
+  if (hourDate === todayIso && hourIso < nowIso) return;
 
-      const dt = document.createElement('dt');
-      dt.textContent = formatTime12(d);
+  const d = new Date(times[i]);
+  const precip = (rain[i] || 0) + (showers[i] || 0) + (snow[i] || 0);
+  const w = wind[i] || 0;
+  const h = rh[i] || 0;
 
-      const dd = document.createElement('dd');
-      dd.className = 'hour ' + hourSev;
+  let hourSev;
+  if (goodFlags[i]) hourSev = 'good';
+  else if (precip >= 0.3) hourSev = 'bad';
+  else if (w >= 12) hourSev = 'fair';
+  else hourSev = 'fair';
 
-      const emoji = document.createElement('span');
-      emoji.className = 'hour-emoji';
-      emoji.setAttribute('role', 'img');
-      emoji.setAttribute('aria-label', sevObj.aria);
-      emoji.textContent = sevObj.emoji;
+  const sevObj = severityEmoji(hourSev);
 
-      const factors = document.createElement('span');
-      factors.className = 'hour-factors';
-      factors.textContent =
-        ` (☔ ${precip.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 💧 ${h}%)`;
+  const dt = document.createElement('dt');
+  dt.textContent = formatTime12(d);
 
-      dd.appendChild(emoji);
-      dd.appendChild(factors);
+  const dd = document.createElement('dd');
+  dd.className = 'hour ' + hourSev;
 
-      dl.appendChild(dt);
-      dl.appendChild(dd);
-    });
+  const emoji = document.createElement('span');
+  emoji.className = 'hour-emoji';
+  emoji.setAttribute('role', 'img');
+  emoji.setAttribute('aria-label', sevObj.aria);
+  emoji.textContent = sevObj.emoji;
+
+  const factors = document.createElement('span');
+  factors.className = 'hour-factors';
+  factors.textContent =
+    ` (☔ ${precip.toFixed(1)} mm · 💨 ${w.toFixed(1)} m/s · 💧 ${h}%)`;
+
+  dd.appendChild(emoji);
+  dd.appendChild(factors);
+
+  dl.appendChild(dt);
+  dl.appendChild(dd);
+});
 
     meta.appendChild(dl);
     details.appendChild(meta);
