@@ -568,15 +568,17 @@ function renderDaySummaries(times, rain, showers, snow, wind, rh, goodFlags){
 
     const dl = document.createElement('dl');
 
-const nowIso = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
-const todayIso = new Date().toISOString().slice(0, 10);
+const nowIso = new Date().toISOString().slice(0, 16);   // YYYY-MM-DDTHH:MM
+const todayIso = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
 idx.forEach(i => {
-  const hourIso = times[i].slice(0, 16);
+  const hourIso  = times[i].slice(0, 16);
   const hourDate = times[i].slice(0, 10);
 
   // Skip past hours for today
-  if (hourDate === todayIso && hourIso < nowIso) return;
+  if (hourDate === todayIso && hourIso < nowIso) {
+    return; // ← THIS MUST BE HERE
+  }
 
   const d = new Date(times[i]);
   const precip = (rain[i] || 0) + (showers[i] || 0) + (snow[i] || 0);
