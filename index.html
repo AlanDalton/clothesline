@@ -250,8 +250,9 @@ function severityEmoji(sev){
 }
 
 /* ---------------------------------------------------------
-   REALISTIC IRISH DRYING LOGIC
+   Practical outdoor drying thresholds (rain, wind, humidity)
    --------------------------------------------------------- */
+
 function isGoodHour(rain, showers, snow, wind, rh){
   const precip = (rain || 0) + (showers || 0) + (snow || 0);
   return precip < 0.3 && wind < 12 && rh < 85;
